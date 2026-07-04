@@ -18,26 +18,86 @@
     <div class="logo-text">COMMAND CENTRE<span>Task &amp; workflow control</span></div>
   </div>
   <nav id="bizNav">
-    <div class="nav-label">Businesses</div>
+    <div class="nav-label">Categories</div>
     <!-- populated by app.js -->
   </nav>
+  <button id="showAddCategoryBtn" class="ghost-btn" style="margin:12px 20px 0;">+ Add category</button>
+  <div class="add-category" id="addCategoryForm">
+    <input type="text" id="newCategoryName" placeholder="e.g. Personal, University, Sport">
+    <div class="chip-row" id="colorSwatches"></div>
+    <button type="button" id="saveCategoryBtn" class="add-btn" style="width:100%">Add category</button>
+  </div>
   <div class="sidebar-foot"><span class="sync-dot"></span> Saved on this device · offline-ready</div>
   <button id="installBtn">Install app</button>
 </aside>
 
 <main>
   <div class="topbar">
-    <div class="add-task">
-      <input type="text" id="taskInput" placeholder="Add a task — or tap the mic and just say it…">
-      <select id="bizSelect" class="pill-select"></select>
-      <select id="prioritySelect" class="pill-select">
-        <option value="high">High</option>
-        <option value="med" selected>Medium</option>
-        <option value="low">Low</option>
-      </select>
-      <input type="datetime-local" id="dueInput" class="pill-select">
-      <div class="mic-btn" id="micBtn" title="Add task by voice">🎤</div>
-      <button class="add-btn" id="addBtn">Add</button>
+    <div class="add-task" id="addTaskWizard">
+      <div class="step" id="stepTitle">
+        <input type="text" id="taskInput" placeholder="Type a task, then press Enter — or tap the mic">
+        <div class="mic-btn" id="micBtn" title="Add task by voice">🎤</div>
+      </div>
+      <div class="step hidden" id="stepBiz">
+        <div class="step-label">Which business is this for?</div>
+        <div class="chip-row" id="bizChips"></div>
+      </div>
+      <div class="step hidden" id="stepPriority">
+        <div class="step-label">How important is it?</div>
+        <div class="chip-row">
+          <button type="button" class="chip" data-priority="high">High</button>
+          <button type="button" class="chip" data-priority="med">Medium</button>
+          <button type="button" class="chip" data-priority="low">Low</button>
+        </div>
+      </div>
+      <div class="step hidden" id="stepDate">
+        <div class="step-label">Due date &amp; time (optional)</div>
+        <div class="date-row">
+          <div class="field">
+            <label for="dueDateInput">Date</label>
+            <input type="date" id="dueDateInput">
+          </div>
+          <div class="field">
+            <label for="dueTimeInput">Time</label>
+            <input type="time" id="dueTimeInput">
+          </div>
+        </div>
+        <div class="wizard-actions">
+          <button type="button" id="skipDateBtn" class="ghost-btn">Skip date, add task</button>
+          <button type="button" id="finishAddBtn" class="add-btn">Add task</button>
+        </div>
+      </div>
+      <div class="step hidden" id="stepRepeat">
+        <div class="step-label">Does this repeat?</div>
+        <div class="chip-row" id="repeatChips">
+          <button type="button" class="chip" data-freq="none">Doesn't repeat</button>
+          <button type="button" class="chip" data-freq="daily">Daily</button>
+          <button type="button" class="chip" data-freq="weekly">Weekly</button>
+          <button type="button" class="chip" data-freq="monthly">Monthly</button>
+        </div>
+        <div class="hidden" id="repeatDuration">
+          <div class="step-label">For how long?</div>
+          <div class="chip-row">
+            <button type="button" class="chip" data-duration="ongoing">Ongoing</button>
+            <button type="button" class="chip" data-duration="count">Set an end</button>
+          </div>
+          <div class="date-row hidden" id="repeatCountFields">
+            <div class="field">
+              <label for="repeatCount">Number</label>
+              <input type="number" id="repeatCount" min="1" value="4">
+            </div>
+            <div class="field">
+              <label for="repeatUnit">Unit</label>
+              <select id="repeatUnit">
+                <option value="weeks">Weeks</option>
+                <option value="months">Months</option>
+                <option value="years">Years</option>
+              </select>
+            </div>
+          </div>
+          <button type="button" id="finishRepeatBtn" class="add-btn hidden" style="width:100%; margin-top:8px;">Create task(s)</button>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -49,19 +109,25 @@
       <div class="schedule" id="schedule"></div>
       <button id="addBlockBtn">+ Add a time block</button>
       <div class="add-block-form" id="addBlockForm">
-        <div class="row">
-          <input type="text" id="blockLabel" placeholder="Label, e.g. SEO — Riverside Cafe">
+        <div class="field">
+          <label for="blockLabel">What's the block for?</label>
+          <input type="text" id="blockLabel" placeholder="e.g. SEO — Riverside Cafe">
         </div>
-        <div class="row">
+        <div class="field">
+          <label for="blockBiz">Business</label>
           <select id="blockBiz"></select>
         </div>
-        <div class="row">
-          <select id="blockStart"></select>
-          <select id="blockEnd"></select>
+        <div class="date-row">
+          <div class="field">
+            <label for="blockStart">Start</label>
+            <select id="blockStart"></select>
+          </div>
+          <div class="field">
+            <label for="blockEnd">End</label>
+            <select id="blockEnd"></select>
+          </div>
         </div>
-        <div class="row">
-          <button type="button" id="saveBlockBtn" class="add-btn" style="flex:1">Save block</button>
-        </div>
+        <button type="button" id="saveBlockBtn" class="add-btn" style="width:100%">Save block</button>
       </div>
 
       <h3 id="calMonthLabel" style="margin-top:26px;">Calendar</h3>
