@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Command Centre</title>
+<meta name="theme-color" content="#f3f1ec">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<aside>
+  <div class="logo">
+    <div class="logo-mark"><div></div><div></div><div></div><div></div></div>
+    <div class="logo-text">COMMAND CENTRE<span>Task &amp; workflow control</span></div>
+  </div>
+  <nav id="bizNav">
+    <div class="nav-label">Businesses</div>
+    <!-- populated by app.js -->
+  </nav>
+  <div class="sidebar-foot"><span class="sync-dot"></span> Saved on this device · offline-ready</div>
+  <button id="installBtn">Install app</button>
+</aside>
+
+<main>
+  <div class="topbar">
+    <div class="add-task">
+      <input type="text" id="taskInput" placeholder="Add a task — or tap the mic and just say it…">
+      <select id="bizSelect" class="pill-select"></select>
+      <select id="prioritySelect" class="pill-select">
+        <option value="high">High</option>
+        <option value="med" selected>Medium</option>
+        <option value="low">Low</option>
+      </select>
+      <input type="datetime-local" id="dueInput" class="pill-select">
+      <div class="mic-btn" id="micBtn" title="Add task by voice">🎤</div>
+      <button class="add-btn" id="addBtn">Add</button>
+    </div>
+  </div>
+
+  <div class="body-split">
+    <div class="tasks-col" id="taskCol"></div>
+
+    <div class="day-panel">
+      <h3>Today — Time Blocks</h3>
+      <div class="schedule" id="schedule"></div>
+      <button id="addBlockBtn">+ Add a time block</button>
+      <div class="add-block-form" id="addBlockForm">
+        <div class="row">
+          <input type="text" id="blockLabel" placeholder="Label, e.g. SEO — Riverside Cafe">
+        </div>
+        <div class="row">
+          <select id="blockBiz"></select>
+        </div>
+        <div class="row">
+          <select id="blockStart"></select>
+          <select id="blockEnd"></select>
+        </div>
+        <div class="row">
+          <button type="button" id="saveBlockBtn" class="add-btn" style="flex:1">Save block</button>
+        </div>
+      </div>
+
+      <h3 id="calMonthLabel" style="margin-top:26px;">Calendar</h3>
+      <div class="mini-cal-grid" id="calDow"></div>
+      <div class="mini-cal-grid" id="calGrid"></div>
+    </div>
+  </div>
+</main>
+
+<script src="app.js"></script>
+</body>
+</html>
