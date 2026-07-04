@@ -669,6 +669,8 @@ document.getElementById("saveBlockBtn").onclick = () => {
 };
 
 /* ---------- MINI CALENDAR ---------- */
+let selectedDate = new Date();
+
 function renderCalendar() {
   const now = new Date();
   const year = now.getFullYear(), month = now.getMonth();
@@ -701,15 +703,40 @@ function renderCalendar() {
   for (let d = 1; d <= daysInMonth; d++) {
     const cell = document.createElement("div");
     cell.textContent = d;
+    cell.style.cursor = "pointer";
     if (d === now.getDate()) cell.classList.add("today");
+    if (selectedDate.getFullYear() === year && selectedDate.getMonth() === month && selectedDate.getDate() === d) {
+      cell.classList.add("selected");
+    }
     if (dueByDay[d]) {
       const mark = document.createElement("div");
       mark.className = "mark";
       mark.style.background = bizById(dueByDay[d][0]).color;
       cell.appendChild(mark);
     }
+    cell.onclick = () => { selectedDate = new Date(year, month, d); renderAll(); };
     grid.appendChild(cell);
   }
+
+  renderSelectedDayTasks();
+}
+
+function renderSelectedDayTasks() {
+  const label = document.getElementById("selectedDayLabel");
+  const isToday = selectedDate.toDateString() === new Date().toDateString();
+  label.textContent = isToday ? "Today" : selectedDate.toLocaleDateString(undefined, { weekday: "long", month: "short", day: "numeric" });
+
+  const wrap = document.getElementById("selectedDayTasks");
+  wrap.innerHTML = "";
+  const dayTasks = tasks
+    .filter(t => t.due && new Date(t.due).toDateString() === selectedDate.toDateString())
+    .sort((a,b) => a.due.localeCompare(b.due));
+
+  if (!dayTasks.length) {
+    wrap.innerHTML = '<div class="empty-msg" style="padding:8px 0;">No tasks due this day.</div>';
+    return;
+  }
+  dayTasks.forEach(t => wrap.appendChild(taskCard(t)));
 }
 
 /* ---------- REMINDERS ---------- */
