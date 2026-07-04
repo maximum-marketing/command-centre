@@ -164,7 +164,33 @@ main{flex:1; display:flex; flex-direction:column; min-width:0;}
 .mini-cal-grid div.today{background:var(--marketing); color:#fff; font-weight:600;}
 .mini-cal-grid div .mark{position:absolute; bottom:3px; width:3px; height:3px; border-radius:50%;}
 
-@media (max-width:900px){
-  .day-panel{display:none;}
-  aside{width:190px;}
+@media (max-width:820px){
+  body{flex-direction:column;}
+
+  aside{
+    width:100%; flex-direction:row; align-items:center; gap:14px;
+    padding:12px 14px; overflow-x:auto; white-space:nowrap;
+    border-right:none; border-bottom:1px solid var(--hairline);
+  }
+  .logo{padding:0; flex-shrink:0;}
+  .logo-text span{display:none;}
+  nav{margin-top:0; display:flex; gap:6px; flex-shrink:0;}
+  .nav-label{display:none;}
+  .biz-item{padding:7px 12px; border-radius:16px; border:1px solid var(--hairline); border-left:1px solid var(--hairline); white-space:nowrap;}
+  .biz-item.active{border-left-color:var(--hairline);}
+  .biz-item .count{display:none;}
+  .sidebar-foot, #installBtn{display:none;}
+
+  .topbar{padding:14px 16px;}
+  .add-task{flex-wrap:wrap; gap:8px;}
+  .add-task input#taskInput{flex-basis:100%; order:1;}
+  .pill-select{flex:1; min-width:0;}
+  #dueInput{flex-basis:100%; order:4;}
+  .mic-btn{order:5;}
+  .add-btn{order:6; flex:1;}
+
+  .body-split{flex-direction:column;}
+  .tasks-col{padding:16px;}
+  .day-panel{width:100%; border-left:none; border-top:1px solid var(--hairline); padding:18px 16px;}
 }
+
