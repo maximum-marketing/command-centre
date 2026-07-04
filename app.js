@@ -159,12 +159,16 @@ function resetWizard() {
   document.getElementById("taskInput").focus();
 }
 
+function advanceFromTitle() {
+  const val = document.getElementById("taskInput").value.trim();
+  if (!val) { alert("Type a task first, or use the mic."); return; }
+  wizard.title = val;
+  showStep("stepBiz");
+}
 document.getElementById("taskInput").addEventListener("keydown", e => {
-  if (e.key === "Enter" && document.getElementById("taskInput").value.trim()) {
-    wizard.title = document.getElementById("taskInput").value.trim();
-    showStep("stepBiz");
-  }
+  if (e.key === "Enter") advanceFromTitle();
 });
+document.getElementById("titleNextBtn").onclick = advanceFromTitle;
 
 document.querySelectorAll("[data-priority]").forEach(btn => {
   btn.onclick = () => {
@@ -287,7 +291,16 @@ if (SpeechRecognition) {
       showStep("stepBiz");
     }
   };
-  rec.onerror = () => micBtn.classList.remove("listening");
+  rec.onerror = (e) => {
+    micBtn.classList.remove("listening");
+    if (e.error === "not-allowed" || e.error === "service-not-allowed") {
+      alert("Microphone access was blocked. Check your browser's site settings and allow microphone access for this app, then try again.");
+    } else if (e.error === "no-speech") {
+      alert("Didn't catch that — tap the mic and try speaking again.");
+    } else {
+      alert("Voice input hit a problem (" + e.error + "). You can still type the task instead.");
+    }
+  };
   rec.onend = () => micBtn.classList.remove("listening");
   micBtn.onclick = () => {
     micBtn.classList.add("listening");
@@ -319,7 +332,100 @@ function subtaskProgress(task) {
 
 const FREQ_LABEL = { daily: "🔁 Daily", weekly: "🔁 Weekly", monthly: "🔁 Monthly" };
 
+function editCard(task) {
+  const biz = bizById(task.business);
+  const card = document.createElement("div");
+  card.className = "task-card editing";
+  card.style.setProperty("--dot", biz.color);
+
+  const body = document.createElement("div");
+  body.className = "task-body";
+
+  const titleField = document.createElement("input");
+  titleField.type = "text"; titleField.value = task.title;
+  titleField.style.cssText = "font-size:15px; padding:8px 10px; border:1px solid var(--hairline); border-radius:6px; width:100%; margin-bottom:10px; background:var(--panel-2);";
+
+  const bizSelect = document.createElement("select");
+  categories.forEach(c => {
+    const opt = document.createElement("option");
+    opt.value = c.id; opt.textContent = c.name;
+    if (c.id === task.business) opt.selected = true;
+    bizSelect.appendChild(opt);
+  });
+
+  const prioritySelect = document.createElement("select");
+  [["high","High"],["med","Medium"],["low","Low"]].forEach(([val,label]) => {
+    const opt = document.createElement("option");
+    opt.value = val; opt.textContent = label;
+    if (val === task.priority) opt.selected = true;
+    prioritySelect.appendChild(opt);
+  });
+
+  const dateInput = document.createElement("input");
+  dateInput.type = "date";
+  const timeInput = document.createElement("input");
+  timeInput.type = "time";
+  if (task.due) {
+    const d = new Date(task.due);
+    dateInput.value = d.toISOString().slice(0,10);
+    timeInput.value = d.toTimeString().slice(0,5);
+  }
+
+  const row = document.createElement("div");
+  row.className = "date-row";
+  row.style.marginBottom = "10px";
+  [bizSelect, prioritySelect].forEach(el => { el.className = "edit-select"; row.appendChild(wrapField(el)); });
+
+  const dateRow = document.createElement("div");
+  dateRow.className = "date-row";
+  dateRow.style.marginBottom = "10px";
+  dateRow.appendChild(wrapField(dateInput, "Date"));
+  dateRow.appendChild(wrapField(timeInput, "Time"));
+
+  const actions = document.createElement("div");
+  actions.className = "wizard-actions";
+  const saveBtn = document.createElement("button");
+  saveBtn.type = "button"; saveBtn.className = "add-btn"; saveBtn.textContent = "Save changes";
+  saveBtn.onclick = () => {
+    if (!titleField.value.trim()) { alert("A task needs a title."); return; }
+    task.title = titleField.value.trim();
+    task.business = bizSelect.value;
+    task.priority = prioritySelect.value;
+    if (dateInput.value) {
+      const t = timeInput.value || "09:00";
+      task.due = new Date(`${dateInput.value}T${t}`).toISOString();
+    } else {
+      task.due = null;
+    }
+    task._editing = false;
+    saveTasks(); renderAll();
+  };
+  const cancelBtn = document.createElement("button");
+  cancelBtn.type = "button"; cancelBtn.className = "ghost-btn"; cancelBtn.textContent = "Cancel";
+  cancelBtn.onclick = () => { task._editing = false; renderAll(); };
+  actions.appendChild(cancelBtn); actions.appendChild(saveBtn);
+
+  body.appendChild(titleField);
+  body.appendChild(row);
+  body.appendChild(dateRow);
+  body.appendChild(actions);
+  card.appendChild(body);
+  return card;
+}
+function wrapField(el, labelText) {
+  const wrap = document.createElement("div");
+  wrap.className = "field";
+  if (labelText) {
+    const lab = document.createElement("label");
+    lab.textContent = labelText;
+    wrap.appendChild(lab);
+  }
+  wrap.appendChild(el);
+  return wrap;
+}
+
 function taskCard(task) {
+  if (task._editing) return editCard(task);
   const biz = bizById(task.business);
   const card = document.createElement("div");
   card.className = "task-card" + (task.status === "done" ? " done" : "");
@@ -351,7 +457,14 @@ function taskCard(task) {
   mute.title = task.muted ? "Reminders muted — click to re-enable" : "Mute repeat reminders for this task";
   mute.onclick = () => { task.muted = !task.muted; saveTasks(); renderAll(); };
 
-  titleRow.appendChild(title); titleRow.appendChild(mute); titleRow.appendChild(del);
+  const edit = document.createElement("button");
+  edit.type = "button";
+  edit.className = "mute-btn";
+  edit.textContent = "✏️";
+  edit.title = "Edit task";
+  edit.onclick = () => { task._editing = true; renderAll(); };
+
+  titleRow.appendChild(title); titleRow.appendChild(edit); titleRow.appendChild(mute); titleRow.appendChild(del);
 
   const meta = document.createElement("div");
   meta.className = "meta";
