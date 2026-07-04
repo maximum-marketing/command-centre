@@ -181,6 +181,7 @@ main{flex:1; display:flex; flex-direction:column; min-width:0;}
 .hour-row .hr{width:42px; flex-shrink:0; font-family:'Courier New',monospace; padding-top:2px;}
 .block{flex:1; border-radius:5px; padding:7px 11px; font-size:13px; color:#fff; display:flex; justify-content:space-between; gap:6px; align-items:center;}
 .block.empty{background:none; color:var(--ink-faint); border:1px dashed var(--hairline); cursor:pointer;}
+.block.task-block{opacity:0.85; font-style:italic;}
 .block .rm{background:none; border:none; color:rgba(255,255,255,0.85); font-size:13px; cursor:pointer;}
 .add-block-form{display:none; flex-direction:column; gap:12px; margin-top:10px; background:var(--panel-2); padding:14px; border-radius:6px;}
 .add-block-form.show{display:flex;}

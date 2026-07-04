@@ -587,6 +587,17 @@ function timeOptions(selectEl, selected) {
   }
 }
 
+function tasksDueThisHour(hStr) {
+  const today = new Date();
+  return tasks.filter(t => {
+    if (!t.due || t.status === "done") return false;
+    const d = new Date(t.due);
+    if (d.toDateString() !== today.toDateString()) return false;
+    const taskHour = String(d.getHours()).padStart(2, "0") + ":00";
+    return taskHour === hStr;
+  });
+}
+
 function renderSchedule() {
   const sched = document.getElementById("schedule");
   sched.innerHTML = "";
@@ -599,6 +610,8 @@ function renderSchedule() {
     row.appendChild(hr);
 
     const covering = blocks.find(b => hStr >= b.start && hStr < b.end);
+    const dueTasks = tasksDueThisHour(hStr);
+
     if (covering) {
       const biz = bizById(covering.business);
       const blk = document.createElement("div");
@@ -614,6 +627,15 @@ function renderSchedule() {
         blk.appendChild(rm);
       }
       row.appendChild(blk);
+    } else if (dueTasks.length) {
+      dueTasks.forEach(t => {
+        const biz = bizById(t.business);
+        const blk = document.createElement("div");
+        blk.className = "block task-block";
+        blk.style.background = biz.color;
+        blk.innerHTML = `<span>📌 ${t.title}</span>`;
+        row.appendChild(blk);
+      });
     } else {
       const blk = document.createElement("button");
       blk.type = "button";
