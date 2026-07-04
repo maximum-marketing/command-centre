@@ -63,40 +63,42 @@
             <input type="time" id="dueTimeInput">
           </div>
         </div>
+
+        <button type="button" id="repeatToggleBtn" class="chip">🔁 Make this repeat</button>
+
+        <div class="hidden" id="repeatOptions">
+          <div class="step-label">How often?</div>
+          <div class="chip-row" id="repeatChips">
+            <button type="button" class="chip" data-freq="daily">Daily</button>
+            <button type="button" class="chip" data-freq="weekly">Weekly</button>
+            <button type="button" class="chip" data-freq="monthly">Monthly</button>
+          </div>
+          <div class="hidden" id="repeatDuration">
+            <div class="step-label">For how long?</div>
+            <div class="chip-row">
+              <button type="button" class="chip" data-duration="ongoing">Ongoing</button>
+              <button type="button" class="chip" data-duration="count">Set an end</button>
+            </div>
+            <div class="date-row hidden" id="repeatCountFields">
+              <div class="field">
+                <label for="repeatCount">Number</label>
+                <input type="number" id="repeatCount" min="1" value="4">
+              </div>
+              <div class="field">
+                <label for="repeatUnit">Unit</label>
+                <select id="repeatUnit">
+                  <option value="weeks">Weeks</option>
+                  <option value="months">Months</option>
+                  <option value="years">Years</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <div class="wizard-actions">
           <button type="button" id="skipDateBtn" class="ghost-btn">Skip date, add task</button>
           <button type="button" id="finishAddBtn" class="add-btn">Add task</button>
-        </div>
-      </div>
-      <div class="step hidden" id="stepRepeat">
-        <div class="step-label">Does this repeat?</div>
-        <div class="chip-row" id="repeatChips">
-          <button type="button" class="chip" data-freq="none">Doesn't repeat</button>
-          <button type="button" class="chip" data-freq="daily">Daily</button>
-          <button type="button" class="chip" data-freq="weekly">Weekly</button>
-          <button type="button" class="chip" data-freq="monthly">Monthly</button>
-        </div>
-        <div class="hidden" id="repeatDuration">
-          <div class="step-label">For how long?</div>
-          <div class="chip-row">
-            <button type="button" class="chip" data-duration="ongoing">Ongoing</button>
-            <button type="button" class="chip" data-duration="count">Set an end</button>
-          </div>
-          <div class="date-row hidden" id="repeatCountFields">
-            <div class="field">
-              <label for="repeatCount">Number</label>
-              <input type="number" id="repeatCount" min="1" value="4">
-            </div>
-            <div class="field">
-              <label for="repeatUnit">Unit</label>
-              <select id="repeatUnit">
-                <option value="weeks">Weeks</option>
-                <option value="months">Months</option>
-                <option value="years">Years</option>
-              </select>
-            </div>
-          </div>
-          <button type="button" id="finishRepeatBtn" class="add-btn hidden" style="width:100%; margin-top:8px;">Create task(s)</button>
         </div>
       </div>
     </div>

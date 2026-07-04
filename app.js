@@ -138,22 +138,24 @@ function populateBizSelects() {
 }
 
 /* ---------- ADD-TASK WIZARD ---------- */
-const wizard = { title: "", business: null, priority: null, freq: null, durationType: null };
-const STEP_IDS = ["stepTitle", "stepBiz", "stepPriority", "stepDate", "stepRepeat"];
+const wizard = { title: "", business: null, priority: null, repeatOn: false, freq: null, durationType: null };
+const STEP_IDS = ["stepTitle", "stepBiz", "stepPriority", "stepDate"];
 
 function showStep(stepId) {
   STEP_IDS.forEach(id => document.getElementById(id).classList.toggle("hidden", id !== stepId));
 }
 function resetWizard() {
   wizard.title = ""; wizard.business = null; wizard.priority = null;
-  wizard.freq = null; wizard.durationType = null;
+  wizard.repeatOn = false; wizard.freq = null; wizard.durationType = null;
   document.getElementById("taskInput").value = "";
   document.getElementById("dueDateInput").value = "";
   document.getElementById("dueTimeInput").value = "";
-  document.getElementById("repeatCount").value = "";
+  document.getElementById("repeatCount").value = "4";
+  document.getElementById("repeatOptions").classList.add("hidden");
   document.getElementById("repeatDuration").classList.add("hidden");
   document.getElementById("repeatCountFields").classList.add("hidden");
-  document.getElementById("finishRepeatBtn").classList.add("hidden");
+  document.getElementById("repeatToggleBtn").classList.remove("selected");
+  document.getElementById("repeatToggleBtn").textContent = "🔁 Make this repeat";
   document.querySelectorAll("#bizChips .chip, [data-priority], [data-freq], [data-duration]").forEach(c => c.classList.remove("selected"));
   showStep("stepTitle");
   document.getElementById("taskInput").focus();
@@ -179,16 +181,20 @@ document.querySelectorAll("[data-priority]").forEach(btn => {
   };
 });
 
+document.getElementById("repeatToggleBtn").onclick = () => {
+  wizard.repeatOn = !wizard.repeatOn;
+  const btn = document.getElementById("repeatToggleBtn");
+  btn.classList.toggle("selected", wizard.repeatOn);
+  btn.textContent = wizard.repeatOn ? "🔁 Repeating — tap to turn off" : "🔁 Make this repeat";
+  document.getElementById("repeatOptions").classList.toggle("hidden", !wizard.repeatOn);
+};
+
 document.querySelectorAll("[data-freq]").forEach(btn => {
   btn.onclick = () => {
     wizard.freq = btn.dataset.freq;
     document.querySelectorAll("[data-freq]").forEach(b => b.classList.remove("selected"));
     btn.classList.add("selected");
-    if (wizard.freq === "none") {
-      finishAdd(true);
-    } else {
-      document.getElementById("repeatDuration").classList.remove("hidden");
-    }
+    document.getElementById("repeatDuration").classList.remove("hidden");
   };
 });
 document.querySelectorAll("[data-duration]").forEach(btn => {
@@ -197,7 +203,6 @@ document.querySelectorAll("[data-duration]").forEach(btn => {
     document.querySelectorAll("[data-duration]").forEach(b => b.classList.remove("selected"));
     btn.classList.add("selected");
     document.getElementById("repeatCountFields").classList.toggle("hidden", wizard.durationType !== "count");
-    document.getElementById("finishRepeatBtn").classList.remove("hidden");
   };
 });
 
@@ -218,6 +223,7 @@ function addDurationToDate(date, count, unit) {
 
 function finishAdd(withDate) {
   if (!wizard.title || !wizard.business || !wizard.priority) return;
+
   let due = null;
   if (withDate) {
     const d = document.getElementById("dueDateInput").value;
@@ -225,55 +231,41 @@ function finishAdd(withDate) {
     if (d) due = new Date(`${d}T${t}`);
   }
 
-  if (!due) {
-    tasks.push({ id: uid(), title: wizard.title, business: wizard.business, priority: wizard.priority,
-      due: null, status: "open", subtasks: [], lastNotified: null, recurring: null });
-    saveTasks(); resetWizard(); renderAll();
-    return;
-  }
+  const useRepeat = due && wizard.repeatOn && wizard.freq;
 
-  // No date given but user hit "Add task" without repeat step yet -> single task, no repeat offer
-  if (withDate === true && wizard.freq === null) {
-    showStep("stepRepeat");
-    wizard._pendingDue = due;
-    return;
-  }
-
-  const startDate = wizard._pendingDue || due;
-  const freq = wizard.freq;
-  if (!freq || freq === "none") {
-    tasks.push({ id: uid(), title: wizard.title, business: wizard.business, priority: wizard.priority,
-      due: startDate.toISOString(), status: "open", subtasks: [], lastNotified: null, recurring: null });
+  if (!useRepeat) {
+    tasks.push({
+      id: uid(), title: wizard.title, business: wizard.business, priority: wizard.priority,
+      due: due ? due.toISOString() : null, status: "open", subtasks: [], lastNotified: null, recurring: null,
+    });
   } else {
     const seriesId = uid();
     let endDate;
     if (wizard.durationType === "ongoing") {
-      endDate = addDurationToDate(startDate, 2, "years"); // effectively ongoing, capped for storage sanity
+      endDate = addDurationToDate(due, 2, "years"); // effectively ongoing, capped for storage sanity
     } else {
       const count = parseInt(document.getElementById("repeatCount").value, 10) || 1;
       const unit = document.getElementById("repeatUnit").value;
-      endDate = addDurationToDate(startDate, count, unit);
+      endDate = addDurationToDate(due, count, unit);
     }
-    let cur = new Date(startDate);
+    let cur = new Date(due);
     let i = 0;
     while (cur <= endDate && i < MAX_RECURRING_INSTANCES) {
       tasks.push({
         id: uid(), title: wizard.title, business: wizard.business, priority: wizard.priority,
         due: cur.toISOString(), status: "open", subtasks: [], lastNotified: null,
-        recurring: freq, seriesId,
+        recurring: wizard.freq, seriesId,
       });
-      cur = addUnitToDate(cur, freq);
+      cur = addUnitToDate(cur, wizard.freq);
       i++;
     }
   }
   saveTasks();
-  wizard._pendingDue = null;
   resetWizard();
   renderAll();
 }
 document.getElementById("finishAddBtn").onclick = () => finishAdd(true);
 document.getElementById("skipDateBtn").onclick = () => finishAdd(false);
-document.getElementById("finishRepeatBtn").onclick = () => finishAdd(true);
 
 /* ---------- VOICE ---------- */
 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
