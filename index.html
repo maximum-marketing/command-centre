@@ -50,6 +50,7 @@
 <main>
   <div class="topbar">
     <div class="add-task" id="addTaskWizard">
+      <button type="button" id="wizardCancelBtn" class="ghost-btn hidden" style="align-self:flex-start;">✕ Cancel</button>
       <div class="step" id="stepTitle">
         <input type="text" id="taskInput" placeholder="Type a task — or tap the mic">
         <div class="mic-btn" id="micBtn" title="Add task by voice">🎤</div>
@@ -172,7 +173,20 @@
         <button type="button" id="saveBlockBtn" class="add-btn" style="width:100%">Save block</button>
       </div>
 
-      <h3 id="calMonthLabel" style="margin-top:26px;">Calendar</h3>
+      <div class="cal-header" style="margin-top:26px;">
+        <button type="button" id="prevMonthBtn" class="cal-nav-btn">‹</button>
+        <h3 id="calMonthLabel" style="margin:0;">Calendar</h3>
+        <button type="button" id="nextMonthBtn" class="cal-nav-btn">›</button>
+      </div>
+      <button type="button" id="printCalBtn" class="ghost-btn" style="width:100%; margin-top:6px;">🖨️ Print calendar</button>
+      <div class="add-category" id="printForm">
+        <div class="step-label">Print which range?</div>
+        <div class="chip-row">
+          <button type="button" class="chip" data-print="day">Day (selected)</button>
+          <button type="button" class="chip" data-print="week">This week</button>
+          <button type="button" class="chip" data-print="month">This month</button>
+        </div>
+      </div>
       <div class="mini-cal-grid" id="calDow"></div>
       <div class="mini-cal-grid" id="calGrid"></div>
 
@@ -181,6 +195,8 @@
     </div>
   </div>
 </main>
+
+<div id="printArea"></div>
 
 <script src="app.js"></script>
 </body>

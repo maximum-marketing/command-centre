@@ -143,7 +143,9 @@ const STEP_IDS = ["stepTitle", "stepKind", "stepBiz", "stepPriority", "stepDate"
 
 function showStep(stepId) {
   STEP_IDS.forEach(id => document.getElementById(id).classList.toggle("hidden", id !== stepId));
+  document.getElementById("wizardCancelBtn").classList.toggle("hidden", stepId === "stepTitle");
 }
+document.getElementById("wizardCancelBtn").onclick = () => resetWizard();
 function resetWizard() {
   wizard.title = ""; wizard.kind = "task"; wizard.business = null; wizard.priority = null;
   wizard.repeatOn = false; wizard.freq = null; wizard.durationType = null;
@@ -637,15 +639,17 @@ function taskCard(task) {
   return card;
 }
 
+let groupExpanded = { high: true, med: false, low: false };
+
 function renderTasks() {
   const col = document.getElementById("taskCol");
   col.innerHTML = "";
   const filtered = tasks.filter(t => activeFilter === "all" || t.business === activeFilter);
 
   const groups = [
-    { key: "high", label: "High priority", cls: "high" },
-    { key: "med",  label: "Medium priority", cls: "med" },
-    { key: "low",  label: "Low priority — still worth doing", cls: "low" },
+    { key: "high", label: "High priority", cls: "high", collapsible: false },
+    { key: "med",  label: "Medium priority", cls: "med", collapsible: true },
+    { key: "low",  label: "Low priority — still worth doing", cls: "low", collapsible: true },
   ];
 
   let anything = false;
@@ -657,8 +661,20 @@ function renderTasks() {
     anything = true;
     const wrap = document.createElement("div");
     wrap.className = "priority-group";
-    wrap.innerHTML = `<div class="priority-head ${g.cls}"><span class="bar"></span> ${g.label}</div>`;
-    items.forEach(t => wrap.appendChild(taskCard(t)));
+
+    if (!g.collapsible) {
+      wrap.innerHTML = `<div class="priority-head ${g.cls}"><span class="bar"></span> ${g.label}</div>`;
+      items.forEach(t => wrap.appendChild(taskCard(t)));
+    } else {
+      const expanded = groupExpanded[g.key];
+      const head = document.createElement("button");
+      head.type = "button";
+      head.className = `priority-head ${g.cls} collapsible`;
+      head.innerHTML = `<span class="bar"></span> ${g.label} <span class="group-count">(${items.length})</span> <span class="chevron">${expanded ? "▾" : "▸"}</span>`;
+      head.onclick = () => { groupExpanded[g.key] = !groupExpanded[g.key]; renderTasks(); };
+      wrap.appendChild(head);
+      if (expanded) items.forEach(t => wrap.appendChild(taskCard(t)));
+    }
     col.appendChild(wrap);
   });
 
@@ -717,6 +733,12 @@ function renderSchedule() {
       const isStart = hStr === covering.start;
       blk.innerHTML = `<span>${isStart ? covering.label : "↳ continued"}</span>`;
       if (isStart) {
+        const editBtn = document.createElement("button");
+        editBtn.type = "button";
+        editBtn.className = "rm"; editBtn.textContent = "✏️";
+        editBtn.title = "Edit this block";
+        editBtn.onclick = () => openBlockForEdit(covering);
+        blk.appendChild(editBtn);
         const rm = document.createElement("button");
         rm.type = "button";
         rm.className = "rm"; rm.textContent = "✕";
@@ -745,11 +767,27 @@ function renderSchedule() {
   }
 }
 
+let editingBlockId = null;
+
 function toggleBlockForm(show, presetStart) {
   const form = document.getElementById("addBlockForm");
   form.classList.toggle("show", show);
   if (show && presetStart) timeOptions(document.getElementById("blockStart"), presetStart);
+  if (!show) {
+    editingBlockId = null;
+    document.getElementById("blockLabel").value = "";
+    document.getElementById("saveBlockBtn").textContent = "Save block";
+  }
   if (show) form.scrollIntoView({ behavior: "smooth", block: "nearest" });
+}
+function openBlockForEdit(block) {
+  editingBlockId = block.id;
+  document.getElementById("blockLabel").value = block.label;
+  document.getElementById("blockBiz").value = block.business;
+  timeOptions(document.getElementById("blockStart"), block.start);
+  timeOptions(document.getElementById("blockEnd"), block.end);
+  document.getElementById("saveBlockBtn").textContent = "Update block";
+  toggleBlockForm(true);
 }
 document.getElementById("addBlockBtn").onclick = () => toggleBlockForm(true);
 document.getElementById("saveBlockBtn").onclick = () => {
@@ -758,21 +796,29 @@ document.getElementById("saveBlockBtn").onclick = () => {
   const start = document.getElementById("blockStart").value;
   const end = document.getElementById("blockEnd").value;
   if (!label || start >= end) { alert("Give the block a label, and make sure the end time is after the start time."); return; }
-  blocks.push({ id: uid(), label, business, start, end });
+  if (editingBlockId) {
+    const b = blocks.find(bl => bl.id === editingBlockId);
+    if (b) { b.label = label; b.business = business; b.start = start; b.end = end; }
+  } else {
+    blocks.push({ id: uid(), label, business, start, end });
+  }
   saveBlocks();
-  document.getElementById("blockLabel").value = "";
   toggleBlockForm(false);
   renderAll();
 };
 
 /* ---------- MINI CALENDAR ---------- */
 let selectedDate = new Date();
+let calendarMonthOffset = 0;
+document.getElementById("prevMonthBtn").onclick = () => { calendarMonthOffset--; renderCalendar(); };
+document.getElementById("nextMonthBtn").onclick = () => { calendarMonthOffset++; renderCalendar(); };
 
 function renderCalendar() {
-  const now = new Date();
-  const year = now.getFullYear(), month = now.getMonth();
+  const realNow = new Date();
+  const viewDate = new Date(realNow.getFullYear(), realNow.getMonth() + calendarMonthOffset, 1);
+  const year = viewDate.getFullYear(), month = viewDate.getMonth();
   document.getElementById("calMonthLabel").textContent =
-    now.toLocaleDateString(undefined, { month: "long", year: "numeric" });
+    viewDate.toLocaleDateString(undefined, { month: "long", year: "numeric" });
 
   const dowEl = document.getElementById("calDow");
   dowEl.innerHTML = "";
@@ -801,7 +847,7 @@ function renderCalendar() {
     const cell = document.createElement("div");
     cell.textContent = d;
     cell.style.cursor = "pointer";
-    if (d === now.getDate()) cell.classList.add("today");
+    if (calendarMonthOffset === 0 && d === realNow.getDate()) cell.classList.add("today");
     if (selectedDate.getFullYear() === year && selectedDate.getMonth() === month && selectedDate.getDate() === d) {
       cell.classList.add("selected");
     }
@@ -834,6 +880,63 @@ function renderSelectedDayTasks() {
     return;
   }
   dayTasks.forEach(t => wrap.appendChild(taskCard(t)));
+}
+
+/* ---------- PRINTABLE CALENDAR ---------- */
+document.getElementById("printCalBtn").onclick = () => {
+  document.getElementById("printForm").classList.toggle("show");
+};
+document.querySelectorAll("[data-print]").forEach(btn => {
+  btn.onclick = () => {
+    document.getElementById("printForm").classList.remove("show");
+    buildAndPrint(btn.dataset.print);
+  };
+});
+
+function tasksForDay(date) {
+  return tasks
+    .filter(t => t.due && new Date(t.due).toDateString() === date.toDateString())
+    .sort((a,b) => a.due.localeCompare(b.due));
+}
+
+function buildAndPrint(range) {
+  const area = document.getElementById("printArea");
+  let days = [];
+  let title = "";
+
+  if (range === "day") {
+    days = [selectedDate];
+    title = selectedDate.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric", year: "numeric" });
+  } else if (range === "week") {
+    const start = new Date(selectedDate);
+    start.setDate(start.getDate() - start.getDay());
+    for (let i = 0; i < 7; i++) { const d = new Date(start); d.setDate(start.getDate() + i); days.push(d); }
+    title = `Week of ${start.toLocaleDateString(undefined, { month: "long", day: "numeric", year: "numeric" })}`;
+  } else {
+    const y = selectedDate.getFullYear(), m = selectedDate.getMonth();
+    const daysInMonth = new Date(y, m + 1, 0).getDate();
+    for (let d = 1; d <= daysInMonth; d++) days.push(new Date(y, m, d));
+    title = selectedDate.toLocaleDateString(undefined, { month: "long", year: "numeric" });
+  }
+
+  let html = `<h1>Command Centre — ${title}</h1>`;
+  days.forEach(day => {
+    const dayTasks = tasksForDay(day);
+    html += `<div class="print-day"><h2>${day.toLocaleDateString(undefined, { weekday: "long", month: "short", day: "numeric" })}</h2>`;
+    if (!dayTasks.length) {
+      html += `<div class="print-item">— nothing scheduled —</div>`;
+    } else {
+      dayTasks.forEach(t => {
+        const time = new Date(t.due).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+        const biz = bizById(t.business).name;
+        html += `<div class="print-item"><span class="pi-time">${time}</span> ${t.title} — ${biz}</div>`;
+      });
+    }
+    html += `</div>`;
+  });
+
+  area.innerHTML = html;
+  window.print();
 }
 
 /* ---------- REMINDERS ---------- */
