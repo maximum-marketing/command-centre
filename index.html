@@ -9,6 +9,7 @@
 <link rel="icon" href="icons/icon-192.png">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
 <link rel="stylesheet" href="style.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 
@@ -27,7 +28,22 @@
     <div class="chip-row" id="colorSwatches"></div>
     <button type="button" id="saveCategoryBtn" class="add-btn" style="width:100%">Add category</button>
   </div>
-  <div class="sidebar-foot"><span class="sync-dot"></span> Saved on this device · offline-ready</div>
+  <div class="sidebar-foot" id="syncStatus"><span class="sync-dot"></span> Saved on this device · offline-ready</div>
+  <button id="showSyncBtn" class="ghost-btn" style="margin:8px 20px 0;">⇅ Sync settings</button>
+  <div class="add-category" id="syncForm">
+    <div style="font-size:11.5px; color:var(--ink-dim); line-height:1.5;">
+      Paste your Supabase project URL and anon key to sync tasks between your phone and desktop.
+    </div>
+    <input type="text" id="supabaseUrl" placeholder="Supabase Project URL">
+    <input type="text" id="supabaseKey" placeholder="Supabase anon public key">
+    <input type="text" id="syncWorkspace" placeholder="Workspace name, e.g. your name">
+    <div style="font-size:10.5px; color:var(--ink-faint); line-height:1.4;">
+      If sharing one Supabase project with someone else, give each person a different
+      workspace name so your data stays separate. Leave blank if it's just you.
+    </div>
+    <button type="button" id="saveSyncBtn" class="add-btn" style="width:100%">Connect</button>
+    <button type="button" id="disconnectSyncBtn" class="ghost-btn" style="width:100%">Disconnect sync</button>
+  </div>
   <button id="installBtn">Install app</button>
 </aside>
 
@@ -39,8 +55,16 @@
         <div class="mic-btn" id="micBtn" title="Add task by voice">🎤</div>
         <button type="button" id="titleNextBtn" class="add-btn">Next</button>
       </div>
+      <div class="step hidden" id="stepKind">
+        <div class="step-label">What kind of item is this?</div>
+        <div class="chip-row">
+          <button type="button" class="chip" data-kind="task">📋 Task</button>
+          <button type="button" class="chip" data-kind="followup">👋 Follow-up</button>
+          <button type="button" class="chip" data-kind="appointment">🗓️ Appointment</button>
+        </div>
+      </div>
       <div class="step hidden" id="stepBiz">
-        <div class="step-label">Which business is this for?</div>
+        <div class="step-label">Which category is this for?</div>
         <div class="chip-row" id="bizChips"></div>
       </div>
       <div class="step hidden" id="stepPriority">
@@ -52,7 +76,7 @@
         </div>
       </div>
       <div class="step hidden" id="stepDate">
-        <div class="step-label">Due date &amp; time (optional)</div>
+        <div class="step-label" id="dateStepLabel">Due date &amp; time (optional)</div>
         <div class="date-row">
           <div class="field">
             <label for="dueDateInput">Date</label>
@@ -62,6 +86,11 @@
             <label for="dueTimeInput">Time</label>
             <input type="time" id="dueTimeInput">
           </div>
+        </div>
+
+        <div class="field hidden" id="locationField" style="margin-bottom:10px;">
+          <label for="locationInput">Location / notes (optional)</label>
+          <input type="text" id="locationInput" placeholder="e.g. Client office, 42 Smith St">
         </div>
 
         <button type="button" id="repeatToggleBtn" class="chip">🔁 Make this repeat</button>
@@ -100,6 +129,16 @@
           <button type="button" id="skipDateBtn" class="ghost-btn">Skip date, add task</button>
           <button type="button" id="finishAddBtn" class="add-btn">Add task</button>
         </div>
+      </div>
+      <div class="step hidden" id="stepCheckin">
+        <div class="step-label">Check in again in how many days?</div>
+        <div class="date-row">
+          <div class="field">
+            <label for="checkinDays">Days</label>
+            <input type="number" id="checkinDays" min="1" value="3">
+          </div>
+        </div>
+        <button type="button" id="finishCheckinBtn" class="add-btn" style="width:100%; margin-top:8px;">Create follow-up</button>
       </div>
     </div>
   </div>

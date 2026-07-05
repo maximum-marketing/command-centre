@@ -24,9 +24,9 @@ function load(key, fallback) {
     return raw ? JSON.parse(raw) : fallback;
   } catch (e) { return fallback; }
 }
-function saveTasks() { localStorage.setItem("cc_tasks", JSON.stringify(tasks)); }
-function saveBlocks() { localStorage.setItem("cc_blocks", JSON.stringify(blocks)); }
-function saveCategories() { localStorage.setItem("cc_categories", JSON.stringify(categories)); }
+function saveTasks() { localStorage.setItem("cc_tasks", JSON.stringify(tasks)); if (typeof sb !== "undefined" && sb) pushToCloud(); }
+function saveBlocks() { localStorage.setItem("cc_blocks", JSON.stringify(blocks)); if (typeof sb !== "undefined" && sb) pushToCloud(); }
+function saveCategories() { localStorage.setItem("cc_categories", JSON.stringify(categories)); if (typeof sb !== "undefined" && sb) pushToCloud(); }
 function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
 function bizById(id) { return categories.find(b => b.id === id) || categories[0] || DEFAULT_CATEGORIES[0]; }
 
@@ -138,25 +138,27 @@ function populateBizSelects() {
 }
 
 /* ---------- ADD-TASK WIZARD ---------- */
-const wizard = { title: "", business: null, priority: null, repeatOn: false, freq: null, durationType: null };
-const STEP_IDS = ["stepTitle", "stepBiz", "stepPriority", "stepDate"];
+const wizard = { title: "", kind: "task", business: null, priority: null, repeatOn: false, freq: null, durationType: null };
+const STEP_IDS = ["stepTitle", "stepKind", "stepBiz", "stepPriority", "stepDate", "stepCheckin"];
 
 function showStep(stepId) {
   STEP_IDS.forEach(id => document.getElementById(id).classList.toggle("hidden", id !== stepId));
 }
 function resetWizard() {
-  wizard.title = ""; wizard.business = null; wizard.priority = null;
+  wizard.title = ""; wizard.kind = "task"; wizard.business = null; wizard.priority = null;
   wizard.repeatOn = false; wizard.freq = null; wizard.durationType = null;
   document.getElementById("taskInput").value = "";
   document.getElementById("dueDateInput").value = "";
   document.getElementById("dueTimeInput").value = "";
+  document.getElementById("locationInput").value = "";
+  document.getElementById("checkinDays").value = "3";
   document.getElementById("repeatCount").value = "4";
   document.getElementById("repeatOptions").classList.add("hidden");
   document.getElementById("repeatDuration").classList.add("hidden");
   document.getElementById("repeatCountFields").classList.add("hidden");
   document.getElementById("repeatToggleBtn").classList.remove("selected");
   document.getElementById("repeatToggleBtn").textContent = "🔁 Make this repeat";
-  document.querySelectorAll("#bizChips .chip, [data-priority], [data-freq], [data-duration]").forEach(c => c.classList.remove("selected"));
+  document.querySelectorAll("#bizChips .chip, [data-priority], [data-freq], [data-duration], [data-kind]").forEach(c => c.classList.remove("selected"));
   showStep("stepTitle");
   document.getElementById("taskInput").focus();
 }
@@ -165,18 +167,37 @@ function advanceFromTitle() {
   const val = document.getElementById("taskInput").value.trim();
   if (!val) { alert("Type a task first, or use the mic."); return; }
   wizard.title = val;
-  showStep("stepBiz");
+  showStep("stepKind");
 }
 document.getElementById("taskInput").addEventListener("keydown", e => {
   if (e.key === "Enter") advanceFromTitle();
 });
 document.getElementById("titleNextBtn").onclick = advanceFromTitle;
 
+document.querySelectorAll("[data-kind]").forEach(btn => {
+  btn.onclick = () => {
+    wizard.kind = btn.dataset.kind;
+    document.querySelectorAll("[data-kind]").forEach(b => b.classList.remove("selected"));
+    btn.classList.add("selected");
+    showStep("stepBiz");
+  };
+});
+
 document.querySelectorAll("[data-priority]").forEach(btn => {
   btn.onclick = () => {
     wizard.priority = btn.dataset.priority;
     document.querySelectorAll("[data-priority]").forEach(b => b.classList.remove("selected"));
     btn.classList.add("selected");
+
+    if (wizard.kind === "followup") {
+      showStep("stepCheckin");
+      return;
+    }
+    // Task or appointment: show the date step, adjusted per kind
+    const isAppt = wizard.kind === "appointment";
+    document.getElementById("dateStepLabel").textContent = isAppt ? "When is it?" : "Due date & time (optional)";
+    document.getElementById("locationField").classList.toggle("hidden", !isAppt);
+    document.getElementById("skipDateBtn").classList.toggle("hidden", isAppt);
     showStep("stepDate");
   };
 });
@@ -221,6 +242,19 @@ function addDurationToDate(date, count, unit) {
   return d;
 }
 
+document.getElementById("finishCheckinBtn").onclick = () => {
+  if (!wizard.title || !wizard.business || !wizard.priority) return;
+  const days = parseInt(document.getElementById("checkinDays").value, 10) || 3;
+  tasks.push({
+    id: uid(), title: wizard.title, business: wizard.business, priority: wizard.priority,
+    kind: "followup", due: null, checkinDays: days, nextCheckin: Date.now() + days * 86400000,
+    status: "open", subtasks: [], lastNotified: null, recurring: null,
+  });
+  saveTasks();
+  resetWizard();
+  renderAll();
+};
+
 function finishAdd(withDate) {
   if (!wizard.title || !wizard.business || !wizard.priority) return;
 
@@ -231,12 +265,20 @@ function finishAdd(withDate) {
     if (d) due = new Date(`${d}T${t}`);
   }
 
+  if (wizard.kind === "appointment" && !due) {
+    alert("Appointments need a date and time.");
+    return;
+  }
+
+  const location = document.getElementById("locationInput").value.trim() || null;
   const useRepeat = due && wizard.repeatOn && wizard.freq;
 
   if (!useRepeat) {
     tasks.push({
       id: uid(), title: wizard.title, business: wizard.business, priority: wizard.priority,
-      due: due ? due.toISOString() : null, status: "open", subtasks: [], lastNotified: null, recurring: null,
+      kind: wizard.kind, location,
+      due: due ? due.toISOString() : null, status: "open", subtasks: [], lastNotified: null,
+      recurring: null, remindersFired: [],
     });
   } else {
     const seriesId = uid();
@@ -253,8 +295,9 @@ function finishAdd(withDate) {
     while (cur <= endDate && i < MAX_RECURRING_INSTANCES) {
       tasks.push({
         id: uid(), title: wizard.title, business: wizard.business, priority: wizard.priority,
+        kind: wizard.kind, location,
         due: cur.toISOString(), status: "open", subtasks: [], lastNotified: null,
-        recurring: wizard.freq, seriesId,
+        recurring: wizard.freq, seriesId, remindersFired: [],
       });
       cur = addUnitToDate(cur, wizard.freq);
       i++;
@@ -280,7 +323,7 @@ if (SpeechRecognition) {
     micBtn.classList.remove("listening");
     if (text.trim()) {
       wizard.title = text.trim();
-      showStep("stepBiz");
+      showStep("stepKind");
     }
   };
   rec.onerror = (e) => {
@@ -305,6 +348,7 @@ if (SpeechRecognition) {
 
 /* ---------- TASK LIST ---------- */
 function overdueInfo(task) {
+  if (task.kind === "appointment") return null; // appointments use their own upcoming reminders, not overdue nagging
   if (!task.due || task.status === "done") return null;
   const dueTime = new Date(task.due).getTime();
   const now = Date.now();
@@ -314,6 +358,29 @@ function overdueInfo(task) {
   const nextNagMs = NAG_INTERVAL_MS - ((now - lastNotified) % NAG_INTERVAL_MS);
   const nextNagH = Math.max(1, Math.ceil(nextNagMs / 3600000));
   return { hoursOverdue, nextNagH };
+}
+
+function followupInfo(task) {
+  if (task.kind !== "followup" || task.status === "done" || !task.nextCheckin) return null;
+  const now = Date.now();
+  if (now < task.nextCheckin) return null;
+  const daysOverdue = Math.floor((now - task.nextCheckin) / 86400000);
+  const lastNotified = task.lastNotified || task.nextCheckin;
+  const nextNagMs = NAG_INTERVAL_MS - ((now - lastNotified) % NAG_INTERVAL_MS);
+  const nextNagH = Math.max(1, Math.ceil(nextNagMs / 3600000));
+  return { daysOverdue, nextNagH };
+}
+
+function apptCountdown(task) {
+  if (task.kind !== "appointment" || !task.due || task.status === "done") return null;
+  const now = Date.now();
+  const dueTime = new Date(task.due).getTime();
+  if (now >= dueTime) return "Already happened";
+  const diffMin = Math.round((dueTime - now) / 60000);
+  if (diffMin < 60) return `Starts in ${diffMin}m`;
+  const diffH = Math.floor(diffMin / 60);
+  if (diffH < 24) return `Starts in ${diffH}h`;
+  return `Starts in ${Math.floor(diffH / 24)}d`;
 }
 
 function subtaskProgress(task) {
@@ -436,7 +503,8 @@ function taskCard(task) {
   titleRow.className = "title-row";
   const title = document.createElement("div");
   title.className = "title";
-  title.textContent = task.title;
+  const KIND_ICON = { followup: "👋 ", appointment: "🗓️ " };
+  title.textContent = (KIND_ICON[task.kind] || "") + task.title;
   const del = document.createElement("button");
   del.type = "button";
   del.className = "del-btn"; del.textContent = "✕"; del.title = "Delete task";
@@ -458,14 +526,43 @@ function taskCard(task) {
 
   titleRow.appendChild(title); titleRow.appendChild(edit); titleRow.appendChild(mute); titleRow.appendChild(del);
 
+  if (task.kind === "followup" && task.status !== "done") {
+    const snooze = document.createElement("button");
+    snooze.type = "button";
+    snooze.className = "mute-btn";
+    snooze.textContent = "⏭️";
+    snooze.title = `Not yet — check in again in ${task.checkinDays || 3} days`;
+    snooze.onclick = () => {
+      task.nextCheckin = Date.now() + (task.checkinDays || 3) * 86400000;
+      task.lastNotified = null;
+      saveTasks(); renderAll();
+    };
+    titleRow.appendChild(snooze);
+  }
+
   const meta = document.createElement("div");
   meta.className = "meta";
   let metaHtml = `<span class="biz-chip" style="color:${biz.color}">${biz.name}</span>`;
   if (task.due) {
     const d = new Date(task.due);
-    metaHtml += ` · Due ${d.toLocaleDateString(undefined,{month:'short',day:'numeric'})}, ${d.toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'})}`;
+    metaHtml += ` · ${task.kind === "appointment" ? "" : "Due "}${d.toLocaleDateString(undefined,{month:'short',day:'numeric'})}, ${d.toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'})}`;
   }
+  if (task.location) metaHtml += ` · 📍 ${task.location}`;
   if (task.recurring && FREQ_LABEL[task.recurring]) metaHtml += ` · ${FREQ_LABEL[task.recurring]}`;
+
+  const appt = apptCountdown(task);
+  if (appt) metaHtml += ` · <span style="color:var(--marketing); font-weight:600;">${appt}</span>`;
+
+  const fu = followupInfo(task);
+  if (fu) {
+    metaHtml += task.muted
+      ? ` · <span class="overdue">Follow up — ${fu.daysOverdue}d overdue — reminders muted</span>`
+      : ` · <span class="overdue">Follow up now — ${fu.daysOverdue}d overdue — next nag in ${fu.nextNagH}h</span>`;
+  } else if (task.kind === "followup" && task.status !== "done" && task.nextCheckin) {
+    const daysLeft = Math.ceil((task.nextCheckin - Date.now()) / 86400000);
+    metaHtml += ` · Check in again in ${daysLeft}d`;
+  }
+
   const od = overdueInfo(task);
   if (od) {
     metaHtml += task.muted
@@ -740,17 +837,54 @@ function renderSelectedDayTasks() {
 }
 
 /* ---------- REMINDERS ---------- */
+const APPT_OFFSETS = [
+  { key: "1d", ms: 24 * 3600000, label: "in 1 day" },
+  { key: "1h", ms: 3600000, label: "in 1 hour" },
+  { key: "15m", ms: 15 * 60000, label: "in 15 minutes" },
+];
+
 function checkReminders() {
   let changed = false;
   tasks.forEach(t => {
     if (t.muted) return;
+
+    // Overdue tasks (kind 'task' or undefined)
     const od = overdueInfo(t);
-    if (!od) return;
-    const last = t.lastNotified || new Date(t.due).getTime();
-    if (Date.now() - last >= NAG_INTERVAL_MS) {
-      t.lastNotified = Date.now();
-      changed = true;
-      notify(`Overdue: ${t.title}`, `${bizById(t.business).name} · ${od.hoursOverdue}h overdue. Complete it or update the due date to stop these reminders.`);
+    if (od) {
+      const last = t.lastNotified || new Date(t.due).getTime();
+      if (Date.now() - last >= NAG_INTERVAL_MS) {
+        t.lastNotified = Date.now();
+        changed = true;
+        notify(`Overdue: ${t.title}`, `${bizById(t.business).name} · ${od.hoursOverdue}h overdue. Complete it or update the due date to stop these reminders.`);
+      }
+    }
+
+    // Follow-ups past their check-in date
+    const fu = followupInfo(t);
+    if (fu) {
+      const last = t.lastNotified || t.nextCheckin;
+      if (Date.now() - last >= NAG_INTERVAL_MS) {
+        t.lastNotified = Date.now();
+        changed = true;
+        notify(`Follow up: ${t.title}`, `${bizById(t.business).name} · Time to check in on this — ${fu.daysOverdue}d since it was due.`);
+      }
+    }
+
+    // Appointments — remind ahead of time, once per offset
+    if (t.kind === "appointment" && t.due && t.status !== "done") {
+      const dueTime = new Date(t.due).getTime();
+      const now = Date.now();
+      if (now < dueTime) {
+        t.remindersFired = t.remindersFired || [];
+        APPT_OFFSETS.forEach(off => {
+          const fireAt = dueTime - off.ms;
+          if (now >= fireAt && !t.remindersFired.includes(off.key)) {
+            t.remindersFired.push(off.key);
+            changed = true;
+            notify(`Appointment ${off.label}: ${t.title}`, `${bizById(t.business).name}${t.location ? " · " + t.location : ""}`);
+          }
+        });
+      }
     }
   });
   if (changed) { saveTasks(); renderAll(); }
@@ -787,6 +921,110 @@ if ("serviceWorker" in navigator) {
   });
 }
 
+/* ---------- SYNC (Supabase) ---------- */
+let sb = null;
+let syncing = false;
+let workspace = "default";
+
+function loadSyncConfig() { return load("cc_sync_config", null); }
+function saveSyncConfig(cfg) { localStorage.setItem("cc_sync_config", JSON.stringify(cfg)); }
+function clearSyncConfig() { localStorage.removeItem("cc_sync_config"); }
+function rowId(key) { return `${workspace}::${key}`; }
+
+function setSyncStatus(text) {
+  document.getElementById("syncStatus").innerHTML = `<span class="sync-dot"></span> ${text}`;
+}
+
+function initSync() {
+  const cfg = loadSyncConfig();
+  if (!cfg || !cfg.url || !cfg.key) {
+    setSyncStatus("Saved on this device · offline-ready");
+    return;
+  }
+  workspace = (cfg.workspace && cfg.workspace.trim()) || "default";
+  try {
+    sb = window.supabase.createClient(cfg.url, cfg.key);
+    setSyncStatus("Connecting…");
+    pullFromCloud(true);
+    setInterval(() => pullFromCloud(false), 25000); // check for changes from other devices every 25s
+  } catch (e) {
+    setSyncStatus("Sync error — check settings");
+  }
+}
+
+async function pushToCloud() {
+  if (!sb) return;
+  syncing = true;
+  setSyncStatus("Syncing…");
+  try {
+    await sb.from("app_state").upsert([
+      { id: rowId("tasks"), data: tasks, updated_at: new Date().toISOString() },
+      { id: rowId("blocks"), data: blocks, updated_at: new Date().toISOString() },
+      { id: rowId("categories"), data: categories, updated_at: new Date().toISOString() },
+    ]);
+    setSyncStatus("Synced just now" + (workspace !== "default" ? ` · ${workspace}` : ""));
+  } catch (e) {
+    setSyncStatus("Sync failed — will retry");
+  }
+  syncing = false;
+}
+
+async function pullFromCloud(isInitial) {
+  if (!sb || syncing) return;
+  try {
+    const { data, error } = await sb.from("app_state")
+      .select("id,data")
+      .in("id", [rowId("tasks"), rowId("blocks"), rowId("categories")]);
+    if (error) throw error;
+    if (data && data.length) {
+      data.forEach(row => {
+        if (row.id === rowId("tasks") && row.data) { tasks = row.data; saveTasksLocalOnly(); }
+        if (row.id === rowId("blocks") && row.data) { blocks = row.data; saveBlocksLocalOnly(); }
+        if (row.id === rowId("categories") && row.data) { categories = row.data; saveCategoriesLocalOnly(); }
+      });
+      populateBizSelects();
+      renderAll();
+    } else if (isInitial) {
+      // Nothing in the cloud yet for this workspace — push what we have locally to seed it
+      await pushToCloud();
+    }
+    setSyncStatus("Synced · " + new Date().toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" }) + (workspace !== "default" ? ` · ${workspace}` : ""));
+  } catch (e) {
+    setSyncStatus("Sync error — check settings");
+  }
+}
+
+// Local-only save helpers, used when pulling from the cloud so we don't immediately push back
+function saveTasksLocalOnly() { localStorage.setItem("cc_tasks", JSON.stringify(tasks)); }
+function saveBlocksLocalOnly() { localStorage.setItem("cc_blocks", JSON.stringify(blocks)); }
+function saveCategoriesLocalOnly() { localStorage.setItem("cc_categories", JSON.stringify(categories)); }
+
+document.getElementById("showSyncBtn").onclick = () => {
+  const cfg = loadSyncConfig();
+  if (cfg) {
+    document.getElementById("supabaseUrl").value = cfg.url;
+    document.getElementById("supabaseKey").value = cfg.key;
+    document.getElementById("syncWorkspace").value = cfg.workspace || "";
+  }
+  document.getElementById("syncForm").classList.toggle("show");
+};
+document.getElementById("saveSyncBtn").onclick = () => {
+  const url = document.getElementById("supabaseUrl").value.trim();
+  const key = document.getElementById("supabaseKey").value.trim();
+  const ws = document.getElementById("syncWorkspace").value.trim();
+  if (!url || !key) { alert("Paste both your Supabase Project URL and anon key."); return; }
+  saveSyncConfig({ url, key, workspace: ws });
+  document.getElementById("syncForm").classList.remove("show");
+  initSync();
+};
+document.getElementById("disconnectSyncBtn").onclick = () => {
+  if (!confirm("Disconnect sync? This device will keep its tasks locally, but stop syncing with other devices.")) return;
+  clearSyncConfig();
+  sb = null;
+  document.getElementById("syncForm").classList.remove("show");
+  setSyncStatus("Saved on this device · offline-ready");
+};
+
 /* ---------- INIT ---------- */
 function renderAll() {
   renderSidebar();
@@ -799,3 +1037,4 @@ timeOptions(document.getElementById("blockStart"), "09:00");
 timeOptions(document.getElementById("blockEnd"), "12:00");
 renderAll();
 checkReminders();
+initSync();
