@@ -157,35 +157,50 @@
       <div class="schedule" id="schedule"></div>
       <button id="addBlockBtn">+ Add a time block</button>
       <div class="add-block-form" id="addBlockForm">
-        <div class="field">
-          <label for="blockLabel">What's the block for?</label>
-          <input type="text" id="blockLabel" placeholder="e.g. SEO — Riverside Cafe">
-        </div>
-        <div class="field">
-          <label for="blockBiz">Business</label>
-          <select id="blockBiz"></select>
-        </div>
-        <div class="date-row">
+        <div id="blockStepDetails">
           <div class="field">
-            <label for="blockStart">Start</label>
-            <select id="blockStart"></select>
+            <label for="blockLabel">What's the block for?</label>
+            <input type="text" id="blockLabel" placeholder="e.g. SEO — Riverside Cafe">
           </div>
           <div class="field">
-            <label for="blockEnd">End</label>
-            <select id="blockEnd"></select>
+            <label for="blockBiz">Business</label>
+            <select id="blockBiz"></select>
+          </div>
+          <div class="date-row">
+            <div class="field">
+              <label for="blockStart">Start</label>
+              <select id="blockStart"></select>
+            </div>
+            <div class="field">
+              <label for="blockEnd">End</label>
+              <select id="blockEnd"></select>
+            </div>
+          </div>
+          <button type="button" id="blockNextBtn" class="add-btn" style="width:100%">Next</button>
+        </div>
+
+        <div class="hidden" id="blockStepRepeat">
+          <div class="step-label">Does this block repeat?</div>
+          <div class="chip-row">
+            <button type="button" class="chip" data-blockrepeat="daily">🔁 Every day</button>
+            <button type="button" class="chip" data-blockrepeat="once">Just this day</button>
+            <button type="button" class="chip" data-blockrepeat="period">For a set period</button>
+          </div>
+          <div class="date-row hidden" id="blockPeriodFields">
+            <div class="field">
+              <label for="blockFromDate">From</label>
+              <input type="date" id="blockFromDate">
+            </div>
+            <div class="field">
+              <label for="blockToDate">Until</label>
+              <input type="date" id="blockToDate">
+            </div>
+          </div>
+          <div class="wizard-actions">
+            <button type="button" id="blockBackBtn" class="ghost-btn">← Back</button>
+            <button type="button" id="saveBlockBtn" class="add-btn hidden">Save block</button>
           </div>
         </div>
-        <div class="date-row">
-          <div class="field">
-            <label for="blockFromDate">From (blank = every day)</label>
-            <input type="date" id="blockFromDate">
-          </div>
-          <div class="field">
-            <label for="blockToDate">Until (optional)</label>
-            <input type="date" id="blockToDate">
-          </div>
-        </div>
-        <button type="button" id="saveBlockBtn" class="add-btn" style="width:100%">Save block</button>
       </div>
 
       <div class="cal-header" style="margin-top:26px;">
