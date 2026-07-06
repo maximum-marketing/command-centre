@@ -397,6 +397,7 @@ function editCard(task) {
   const biz = bizById(task.business);
   const card = document.createElement("div");
   card.className = "task-card editing";
+  card.dataset.taskId = task.id;
   card.style.setProperty("--dot", biz.color);
 
   const body = document.createElement("div");
@@ -490,6 +491,7 @@ function taskCard(task) {
   const biz = bizById(task.business);
   const card = document.createElement("div");
   card.className = "task-card" + (task.status === "done" ? " done" : "");
+  card.dataset.taskId = task.id;
   card.style.setProperty("--dot", biz.color);
 
   const cb = document.createElement("button");
@@ -641,6 +643,22 @@ function taskCard(task) {
 
 let groupExpanded = { high: true, med: false, low: false };
 
+function jumpToTask(taskId) {
+  const t = tasks.find(x => x.id === taskId);
+  if (!t) return;
+  // Make sure the task will actually be visible: right category filter, and its priority group expanded
+  if (activeFilter !== "all" && activeFilter !== t.business) activeFilter = "all";
+  if (t.priority !== "high") groupExpanded[t.priority] = true;
+  renderAll();
+  setTimeout(() => {
+    const el = document.querySelector(`.task-card[data-task-id="${taskId}"]`);
+    if (!el) return;
+    el.scrollIntoView({ behavior: "smooth", block: "center" });
+    el.classList.add("flash-highlight");
+    setTimeout(() => el.classList.remove("flash-highlight"), 1600);
+  }, 50);
+}
+
 function renderTasks() {
   const col = document.getElementById("taskCol");
   col.innerHTML = "";
@@ -754,10 +772,12 @@ function renderSchedule() {
     } else if (dueTasks.length) {
       dueTasks.forEach(t => {
         const biz = bizById(t.business);
-        const blk = document.createElement("div");
+        const blk = document.createElement("button");
+        blk.type = "button";
         blk.className = "block task-block";
         blk.style.background = biz.color;
-        blk.innerHTML = `<span>📌 ${t.title}</span>`;
+        blk.innerHTML = `<span>📌 ${t.title}${t.status === "done" ? " ✓" : ""}</span>`;
+        blk.onclick = () => jumpToTask(t.id);
         row.appendChild(blk);
       });
     } else {
@@ -781,6 +801,7 @@ function blockAppliesToDay(block, dayStr) {
 }
 
 let editingBlockId = null;
+let blockRepeatChoice = null;
 
 function toggleBlockForm(show, presetStart) {
   const form = document.getElementById("addBlockForm");
@@ -788,34 +809,84 @@ function toggleBlockForm(show, presetStart) {
   if (show && presetStart) timeOptions(document.getElementById("blockStart"), presetStart);
   if (!show) {
     editingBlockId = null;
+    blockRepeatChoice = null;
     document.getElementById("blockLabel").value = "";
     document.getElementById("blockFromDate").value = "";
     document.getElementById("blockToDate").value = "";
+    document.getElementById("blockPeriodFields").classList.add("hidden");
+    document.getElementById("saveBlockBtn").classList.add("hidden");
+    document.querySelectorAll("[data-blockrepeat]").forEach(b => b.classList.remove("selected"));
+    document.getElementById("blockStepDetails").classList.remove("hidden");
+    document.getElementById("blockStepRepeat").classList.add("hidden");
     document.getElementById("saveBlockBtn").textContent = "Save block";
   }
   if (show) form.scrollIntoView({ behavior: "smooth", block: "nearest" });
 }
+
+document.getElementById("blockNextBtn").onclick = () => {
+  const label = document.getElementById("blockLabel").value.trim();
+  const start = document.getElementById("blockStart").value;
+  const end = document.getElementById("blockEnd").value;
+  if (!label || start >= end) { alert("Give the block a label, and make sure the end time is after the start time."); return; }
+  document.getElementById("blockStepDetails").classList.add("hidden");
+  document.getElementById("blockStepRepeat").classList.remove("hidden");
+};
+document.getElementById("blockBackBtn").onclick = () => {
+  document.getElementById("blockStepRepeat").classList.add("hidden");
+  document.getElementById("blockStepDetails").classList.remove("hidden");
+};
+
+document.querySelectorAll("[data-blockrepeat]").forEach(btn => {
+  btn.onclick = () => {
+    blockRepeatChoice = btn.dataset.blockrepeat;
+    document.querySelectorAll("[data-blockrepeat]").forEach(b => b.classList.remove("selected"));
+    btn.classList.add("selected");
+    document.getElementById("blockPeriodFields").classList.toggle("hidden", blockRepeatChoice !== "period");
+    document.getElementById("saveBlockBtn").classList.remove("hidden");
+  };
+});
+
 function openBlockForEdit(block) {
   editingBlockId = block.id;
   document.getElementById("blockLabel").value = block.label;
   document.getElementById("blockBiz").value = block.business;
-  document.getElementById("blockFromDate").value = block.fromDate || "";
-  document.getElementById("blockToDate").value = block.toDate || "";
   timeOptions(document.getElementById("blockStart"), block.start);
   timeOptions(document.getElementById("blockEnd"), block.end);
-  document.getElementById("saveBlockBtn").textContent = "Update block";
   toggleBlockForm(true);
+  // Jump straight to the repeat step, pre-selected, since this is an existing block
+  document.getElementById("blockStepDetails").classList.add("hidden");
+  document.getElementById("blockStepRepeat").classList.remove("hidden");
+  document.getElementById("saveBlockBtn").classList.remove("hidden");
+  document.getElementById("saveBlockBtn").textContent = "Update block";
+  if (block.toDate) blockRepeatChoice = "period";
+  else if (block.fromDate) blockRepeatChoice = "once";
+  else blockRepeatChoice = "daily";
+  document.querySelectorAll("[data-blockrepeat]").forEach(b => b.classList.toggle("selected", b.dataset.blockrepeat === blockRepeatChoice));
+  document.getElementById("blockPeriodFields").classList.toggle("hidden", blockRepeatChoice !== "period");
+  document.getElementById("blockFromDate").value = block.fromDate || "";
+  document.getElementById("blockToDate").value = block.toDate || "";
 }
+
 document.getElementById("addBlockBtn").onclick = () => toggleBlockForm(true);
 document.getElementById("saveBlockBtn").onclick = () => {
   const label = document.getElementById("blockLabel").value.trim();
   const business = document.getElementById("blockBiz").value;
   const start = document.getElementById("blockStart").value;
   const end = document.getElementById("blockEnd").value;
-  const fromDate = document.getElementById("blockFromDate").value || null;
-  const toDate = document.getElementById("blockToDate").value || null;
-  if (!label || start >= end) { alert("Give the block a label, and make sure the end time is after the start time."); return; }
-  if (toDate && !fromDate) { alert("Add a 'From' date if you're setting an 'Until' date."); return; }
+
+  let fromDate = null, toDate = null;
+  const todayStr = selectedDate.getFullYear() + "-" + String(selectedDate.getMonth()+1).padStart(2,"0") + "-" + String(selectedDate.getDate()).padStart(2,"0");
+
+  if (blockRepeatChoice === "once") {
+    fromDate = todayStr;
+    toDate = todayStr;
+  } else if (blockRepeatChoice === "period") {
+    fromDate = document.getElementById("blockFromDate").value || null;
+    toDate = document.getElementById("blockToDate").value || null;
+    if (!fromDate || !toDate) { alert("Set both a 'From' and 'Until' date for a period."); return; }
+  }
+  // "daily" (or no choice made) leaves fromDate/toDate as null = repeats every day
+
   if (editingBlockId) {
     const b = blocks.find(bl => bl.id === editingBlockId);
     if (b) { b.label = label; b.business = business; b.start = start; b.end = end; b.fromDate = fromDate; b.toDate = toDate; }
