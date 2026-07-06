@@ -95,6 +95,18 @@
           <input type="text" id="locationInput" placeholder="e.g. Client office, 42 Smith St">
         </div>
 
+        <div class="hidden" id="reminderField" style="margin-bottom:10px;">
+          <div class="step-label">Remind me (pick any)</div>
+          <div class="chip-row" id="reminderChips">
+            <button type="button" class="chip" data-offset="1w">1 week before</button>
+            <button type="button" class="chip" data-offset="2d">2 days before</button>
+            <button type="button" class="chip" data-offset="1d">1 day before</button>
+            <button type="button" class="chip" data-offset="2h">2 hours before</button>
+            <button type="button" class="chip" data-offset="1h">1 hour before</button>
+            <button type="button" class="chip" data-offset="15m">15 min before</button>
+          </div>
+        </div>
+
         <button type="button" id="repeatToggleBtn" class="chip">🔁 Make this repeat</button>
 
         <div class="hidden" id="repeatOptions">

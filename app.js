@@ -138,7 +138,8 @@ function populateBizSelects() {
 }
 
 /* ---------- ADD-TASK WIZARD ---------- */
-const wizard = { title: "", kind: "task", business: null, priority: null, repeatOn: false, freq: null, durationType: null };
+const DEFAULT_APPT_OFFSETS = ["1d", "1h"];
+const wizard = { title: "", kind: "task", business: null, priority: null, repeatOn: false, freq: null, durationType: null, reminderOffsets: [...DEFAULT_APPT_OFFSETS] };
 const STEP_IDS = ["stepTitle", "stepKind", "stepBiz", "stepPriority", "stepDate", "stepCheckin"];
 
 function showStep(stepId) {
@@ -149,6 +150,7 @@ document.getElementById("wizardCancelBtn").onclick = () => resetWizard();
 function resetWizard() {
   wizard.title = ""; wizard.kind = "task"; wizard.business = null; wizard.priority = null;
   wizard.repeatOn = false; wizard.freq = null; wizard.durationType = null;
+  wizard.reminderOffsets = [...DEFAULT_APPT_OFFSETS];
   document.getElementById("taskInput").value = "";
   document.getElementById("dueDateInput").value = "";
   document.getElementById("dueTimeInput").value = "";
@@ -161,9 +163,24 @@ function resetWizard() {
   document.getElementById("repeatToggleBtn").classList.remove("selected");
   document.getElementById("repeatToggleBtn").textContent = "🔁 Make this repeat";
   document.querySelectorAll("#bizChips .chip, [data-priority], [data-freq], [data-duration], [data-kind]").forEach(c => c.classList.remove("selected"));
+  document.querySelectorAll("[data-offset]").forEach(c => c.classList.toggle("selected", DEFAULT_APPT_OFFSETS.includes(c.dataset.offset)));
   showStep("stepTitle");
   document.getElementById("taskInput").focus();
 }
+
+document.querySelectorAll("[data-offset]").forEach(btn => {
+  btn.classList.toggle("selected", DEFAULT_APPT_OFFSETS.includes(btn.dataset.offset));
+  btn.onclick = () => {
+    const key = btn.dataset.offset;
+    if (wizard.reminderOffsets.includes(key)) {
+      wizard.reminderOffsets = wizard.reminderOffsets.filter(k => k !== key);
+      btn.classList.remove("selected");
+    } else {
+      wizard.reminderOffsets.push(key);
+      btn.classList.add("selected");
+    }
+  };
+});
 
 function advanceFromTitle() {
   const val = document.getElementById("taskInput").value.trim();
@@ -199,6 +216,7 @@ document.querySelectorAll("[data-priority]").forEach(btn => {
     const isAppt = wizard.kind === "appointment";
     document.getElementById("dateStepLabel").textContent = isAppt ? "When is it?" : "Due date & time (optional)";
     document.getElementById("locationField").classList.toggle("hidden", !isAppt);
+    document.getElementById("reminderField").classList.toggle("hidden", !isAppt);
     document.getElementById("skipDateBtn").classList.toggle("hidden", isAppt);
     showStep("stepDate");
   };
@@ -273,12 +291,13 @@ function finishAdd(withDate) {
   }
 
   const location = document.getElementById("locationInput").value.trim() || null;
+  const reminderOffsets = wizard.kind === "appointment" ? [...wizard.reminderOffsets] : null;
   const useRepeat = due && wizard.repeatOn && wizard.freq;
 
   if (!useRepeat) {
     tasks.push({
       id: uid(), title: wizard.title, business: wizard.business, priority: wizard.priority,
-      kind: wizard.kind, location,
+      kind: wizard.kind, location, reminderOffsets,
       due: due ? due.toISOString() : null, status: "open", subtasks: [], lastNotified: null,
       recurring: null, remindersFired: [],
     });
@@ -297,7 +316,7 @@ function finishAdd(withDate) {
     while (cur <= endDate && i < MAX_RECURRING_INSTANCES) {
       tasks.push({
         id: uid(), title: wizard.title, business: wizard.business, priority: wizard.priority,
-        kind: wizard.kind, location,
+        kind: wizard.kind, location, reminderOffsets,
         due: cur.toISOString(), status: "open", subtasks: [], lastNotified: null,
         recurring: wizard.freq, seriesId, remindersFired: [],
       });
@@ -1034,7 +1053,10 @@ function buildAndPrint(range) {
 
 /* ---------- REMINDERS ---------- */
 const APPT_OFFSETS = [
+  { key: "1w", ms: 7 * 24 * 3600000, label: "in 1 week" },
+  { key: "2d", ms: 2 * 24 * 3600000, label: "in 2 days" },
   { key: "1d", ms: 24 * 3600000, label: "in 1 day" },
+  { key: "2h", ms: 2 * 3600000, label: "in 2 hours" },
   { key: "1h", ms: 3600000, label: "in 1 hour" },
   { key: "15m", ms: 15 * 60000, label: "in 15 minutes" },
 ];
@@ -1066,13 +1088,14 @@ function checkReminders() {
       }
     }
 
-    // Appointments — remind ahead of time, once per offset
+    // Appointments — remind ahead of time, once per chosen offset
     if (t.kind === "appointment" && t.due && t.status !== "done") {
       const dueTime = new Date(t.due).getTime();
       const now = Date.now();
       if (now < dueTime) {
         t.remindersFired = t.remindersFired || [];
-        APPT_OFFSETS.forEach(off => {
+        const chosen = (t.reminderOffsets && t.reminderOffsets.length) ? t.reminderOffsets : DEFAULT_APPT_OFFSETS;
+        APPT_OFFSETS.filter(off => chosen.includes(off.key)).forEach(off => {
           const fireAt = dueTime - off.ms;
           if (now >= fireAt && !t.remindersFired.includes(off.key)) {
             t.remindersFired.push(off.key);
