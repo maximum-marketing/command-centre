@@ -701,17 +701,20 @@ function timeOptions(selectEl, selected) {
 }
 
 function tasksDueThisHour(hStr) {
-  const today = new Date();
   return tasks.filter(t => {
     if (!t.due || t.status === "done") return false;
     const d = new Date(t.due);
-    if (d.toDateString() !== today.toDateString()) return false;
+    if (d.toDateString() !== selectedDate.toDateString()) return false;
     const taskHour = String(d.getHours()).padStart(2, "0") + ":00";
     return taskHour === hStr;
   });
 }
 
 function renderSchedule() {
+  const label = document.getElementById("scheduleDayLabel");
+  const isToday = selectedDate.toDateString() === new Date().toDateString();
+  label.textContent = (isToday ? "Today" : selectedDate.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })) + " — Time Blocks";
+
   const sched = document.getElementById("schedule");
   sched.innerHTML = "";
   for (let h = DAY_START_HOUR; h <= DAY_END_HOUR; h++) {
@@ -812,6 +815,8 @@ let selectedDate = new Date();
 let calendarMonthOffset = 0;
 document.getElementById("prevMonthBtn").onclick = () => { calendarMonthOffset--; renderCalendar(); };
 document.getElementById("nextMonthBtn").onclick = () => { calendarMonthOffset++; renderCalendar(); };
+document.getElementById("prevDayBtn").onclick = () => { selectedDate = new Date(selectedDate.getTime() - 86400000); renderAll(); };
+document.getElementById("nextDayBtn").onclick = () => { selectedDate = new Date(selectedDate.getTime() + 86400000); renderAll(); };
 
 function renderCalendar() {
   const realNow = new Date();

@@ -149,7 +149,11 @@
     <div class="tasks-col" id="taskCol"></div>
 
     <div class="day-panel">
-      <h3>Today — Time Blocks</h3>
+      <div class="cal-header">
+        <button type="button" id="prevDayBtn" class="cal-nav-btn">‹</button>
+        <h3 id="scheduleDayLabel" style="margin:0;">Today — Time Blocks</h3>
+        <button type="button" id="nextDayBtn" class="cal-nav-btn">›</button>
+      </div>
       <div class="schedule" id="schedule"></div>
       <button id="addBlockBtn">+ Add a time block</button>
       <div class="add-block-form" id="addBlockForm">
