@@ -725,7 +725,8 @@ function renderSchedule() {
     hr.className = "hr"; hr.textContent = hourLabel(h);
     row.appendChild(hr);
 
-    const covering = blocks.find(b => hStr >= b.start && hStr < b.end);
+    const dayStr = selectedDate.getFullYear() + "-" + String(selectedDate.getMonth()+1).padStart(2,"0") + "-" + String(selectedDate.getDate()).padStart(2,"0");
+    const covering = blocks.find(b => hStr >= b.start && hStr < b.end && blockAppliesToDay(b, dayStr));
     const dueTasks = tasksDueThisHour(hStr);
 
     if (covering) {
@@ -734,7 +735,8 @@ function renderSchedule() {
       blk.className = "block";
       blk.style.background = biz.color;
       const isStart = hStr === covering.start;
-      blk.innerHTML = `<span>${isStart ? covering.label : "↳ continued"}</span>`;
+      const rangeTag = covering.fromDate ? (covering.toDate ? "" : " · one day") : "";
+      blk.innerHTML = `<span>${isStart ? covering.label + rangeTag : "↳ continued"}</span>`;
       if (isStart) {
         const editBtn = document.createElement("button");
         editBtn.type = "button";
@@ -770,6 +772,14 @@ function renderSchedule() {
   }
 }
 
+function blockAppliesToDay(block, dayStr) {
+  if (!block.fromDate) return true; // no start date set = repeats every day
+  if (dayStr < block.fromDate) return false;
+  if (block.toDate && dayStr > block.toDate) return false;
+  if (!block.toDate && dayStr !== block.fromDate) return false; // single day only, no end date given
+  return true;
+}
+
 let editingBlockId = null;
 
 function toggleBlockForm(show, presetStart) {
@@ -779,6 +789,8 @@ function toggleBlockForm(show, presetStart) {
   if (!show) {
     editingBlockId = null;
     document.getElementById("blockLabel").value = "";
+    document.getElementById("blockFromDate").value = "";
+    document.getElementById("blockToDate").value = "";
     document.getElementById("saveBlockBtn").textContent = "Save block";
   }
   if (show) form.scrollIntoView({ behavior: "smooth", block: "nearest" });
@@ -787,6 +799,8 @@ function openBlockForEdit(block) {
   editingBlockId = block.id;
   document.getElementById("blockLabel").value = block.label;
   document.getElementById("blockBiz").value = block.business;
+  document.getElementById("blockFromDate").value = block.fromDate || "";
+  document.getElementById("blockToDate").value = block.toDate || "";
   timeOptions(document.getElementById("blockStart"), block.start);
   timeOptions(document.getElementById("blockEnd"), block.end);
   document.getElementById("saveBlockBtn").textContent = "Update block";
@@ -798,12 +812,15 @@ document.getElementById("saveBlockBtn").onclick = () => {
   const business = document.getElementById("blockBiz").value;
   const start = document.getElementById("blockStart").value;
   const end = document.getElementById("blockEnd").value;
+  const fromDate = document.getElementById("blockFromDate").value || null;
+  const toDate = document.getElementById("blockToDate").value || null;
   if (!label || start >= end) { alert("Give the block a label, and make sure the end time is after the start time."); return; }
+  if (toDate && !fromDate) { alert("Add a 'From' date if you're setting an 'Until' date."); return; }
   if (editingBlockId) {
     const b = blocks.find(bl => bl.id === editingBlockId);
-    if (b) { b.label = label; b.business = business; b.start = start; b.end = end; }
+    if (b) { b.label = label; b.business = business; b.start = start; b.end = end; b.fromDate = fromDate; b.toDate = toDate; }
   } else {
-    blocks.push({ id: uid(), label, business, start, end });
+    blocks.push({ id: uid(), label, business, start, end, fromDate, toDate });
   }
   saveBlocks();
   toggleBlockForm(false);
