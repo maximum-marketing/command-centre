@@ -162,6 +162,14 @@ function resetWizard() {
   document.getElementById("repeatCountFields").classList.add("hidden");
   document.getElementById("repeatToggleBtn").classList.remove("selected");
   document.getElementById("repeatToggleBtn").textContent = "🔁 Make this repeat";
+  document.getElementById("notesInput").value = "";
+  document.getElementById("noteField").classList.add("hidden");
+  document.getElementById("noteToggleBtn").classList.remove("selected");
+  document.getElementById("noteToggleBtn").textContent = "📝 Add a note";
+  document.getElementById("checkinNotesInput").value = "";
+  document.getElementById("checkinNoteField").classList.add("hidden");
+  document.getElementById("checkinNoteToggleBtn").classList.remove("selected");
+  document.getElementById("checkinNoteToggleBtn").textContent = "📝 Add a note";
   document.querySelectorAll("#bizChips .chip, [data-priority], [data-freq], [data-duration], [data-kind]").forEach(c => c.classList.remove("selected"));
   document.querySelectorAll("[data-offset]").forEach(c => c.classList.toggle("selected", DEFAULT_APPT_OFFSETS.includes(c.dataset.offset)));
   showStep("stepTitle");
@@ -230,6 +238,21 @@ document.getElementById("repeatToggleBtn").onclick = () => {
   document.getElementById("repeatOptions").classList.toggle("hidden", !wizard.repeatOn);
 };
 
+document.getElementById("noteToggleBtn").onclick = () => {
+  const field = document.getElementById("noteField");
+  const nowOpen = field.classList.toggle("hidden") === false;
+  document.getElementById("noteToggleBtn").classList.toggle("selected", nowOpen);
+  document.getElementById("noteToggleBtn").textContent = nowOpen ? "📝 Note added" : "📝 Add a note";
+  if (nowOpen) document.getElementById("notesInput").focus();
+};
+document.getElementById("checkinNoteToggleBtn").onclick = () => {
+  const field = document.getElementById("checkinNoteField");
+  const nowOpen = field.classList.toggle("hidden") === false;
+  document.getElementById("checkinNoteToggleBtn").classList.toggle("selected", nowOpen);
+  document.getElementById("checkinNoteToggleBtn").textContent = nowOpen ? "📝 Note added" : "📝 Add a note";
+  if (nowOpen) document.getElementById("checkinNotesInput").focus();
+};
+
 document.querySelectorAll("[data-freq]").forEach(btn => {
   btn.onclick = () => {
     wizard.freq = btn.dataset.freq;
@@ -265,10 +288,11 @@ function addDurationToDate(date, count, unit) {
 document.getElementById("finishCheckinBtn").onclick = () => {
   if (!wizard.title || !wizard.business || !wizard.priority) return;
   const days = parseInt(document.getElementById("checkinDays").value, 10) || 3;
+  const notes = document.getElementById("checkinNotesInput").value.trim() || null;
   tasks.push({
     id: uid(), title: wizard.title, business: wizard.business, priority: wizard.priority,
     kind: "followup", due: null, checkinDays: days, nextCheckin: Date.now() + days * 86400000,
-    status: "open", subtasks: [], lastNotified: null, recurring: null,
+    status: "open", subtasks: [], lastNotified: null, recurring: null, notes,
   });
   saveTasks();
   resetWizard();
@@ -291,13 +315,14 @@ function finishAdd(withDate) {
   }
 
   const location = document.getElementById("locationInput").value.trim() || null;
+  const notes = document.getElementById("notesInput").value.trim() || null;
   const reminderOffsets = wizard.kind === "appointment" ? [...wizard.reminderOffsets] : null;
   const useRepeat = due && wizard.repeatOn && wizard.freq;
 
   if (!useRepeat) {
     tasks.push({
       id: uid(), title: wizard.title, business: wizard.business, priority: wizard.priority,
-      kind: wizard.kind, location, reminderOffsets,
+      kind: wizard.kind, location, reminderOffsets, notes,
       due: due ? due.toISOString() : null, status: "open", subtasks: [], lastNotified: null,
       recurring: null, remindersFired: [],
     });
@@ -316,7 +341,7 @@ function finishAdd(withDate) {
     while (cur <= endDate && i < MAX_RECURRING_INSTANCES) {
       tasks.push({
         id: uid(), title: wizard.title, business: wizard.business, priority: wizard.priority,
-        kind: wizard.kind, location, reminderOffsets,
+        kind: wizard.kind, location, reminderOffsets, notes,
         due: cur.toISOString(), status: "open", subtasks: [], lastNotified: null,
         recurring: wizard.freq, seriesId, remindersFired: [],
       });
@@ -463,6 +488,50 @@ function editCard(task) {
   dateRow.appendChild(wrapField(dateInput, "Date"));
   dateRow.appendChild(wrapField(timeInput, "Time"));
 
+  const notesLabel = document.createElement("label");
+  notesLabel.textContent = "Note";
+  notesLabel.style.cssText = "font-size:11px; color:var(--ink-faint); text-transform:uppercase; letter-spacing:0.05em; display:block; margin-bottom:4px;";
+  const notesInput = document.createElement("textarea");
+  notesInput.rows = 3;
+  notesInput.value = task.notes || "";
+  notesInput.placeholder = "Any extra details…";
+  notesInput.style.cssText = "width:100%; padding:8px 10px; border:1px solid var(--hairline); border-radius:6px; background:var(--panel-2); font-family:inherit; font-size:13px; resize:vertical; margin-bottom:10px;";
+
+  let locationInput = null;
+  let reminderState = [...(task.reminderOffsets && task.reminderOffsets.length ? task.reminderOffsets : DEFAULT_APPT_OFFSETS)];
+  let reminderSection = null;
+  if (task.kind === "appointment") {
+    locationInput = document.createElement("input");
+    locationInput.type = "text";
+    locationInput.value = task.location || "";
+    locationInput.placeholder = "Location / notes (optional)";
+    locationInput.style.cssText = "font-size:13px; padding:8px 10px; border:1px solid var(--hairline); border-radius:6px; width:100%; margin-bottom:10px; background:var(--panel-2);";
+
+    reminderSection = document.createElement("div");
+    reminderSection.style.marginBottom = "10px";
+
+    const reminderLabel = document.createElement("div");
+    reminderLabel.className = "step-label";
+    reminderLabel.textContent = "Remind me (pick any)";
+    reminderLabel.style.marginBottom = "6px";
+    reminderSection.appendChild(reminderLabel);
+
+    const reminderChipsWrap = document.createElement("div");
+    reminderChipsWrap.className = "chip-row";
+    APPT_OFFSETS.forEach(off => {
+      const chip = document.createElement("button");
+      chip.type = "button";
+      chip.className = "chip" + (reminderState.includes(off.key) ? " selected" : "");
+      chip.textContent = off.label.replace("in ", "") + " before";
+      chip.onclick = () => {
+        if (reminderState.includes(off.key)) { reminderState = reminderState.filter(k => k !== off.key); chip.classList.remove("selected"); }
+        else { reminderState.push(off.key); chip.classList.add("selected"); }
+      };
+      reminderChipsWrap.appendChild(chip);
+    });
+    reminderSection.appendChild(reminderChipsWrap);
+  }
+
   const actions = document.createElement("div");
   actions.className = "wizard-actions";
   const saveBtn = document.createElement("button");
@@ -478,6 +547,12 @@ function editCard(task) {
     } else {
       task.due = null;
     }
+    if (task.kind === "appointment") {
+      task.location = locationInput.value.trim() || null;
+      task.reminderOffsets = [...reminderState];
+      task.remindersFired = []; // dates/reminders changed — allow reminders to fire again on the new schedule
+    }
+    task.notes = notesInput.value.trim() || null;
     task._editing = false;
     saveTasks(); renderAll();
   };
@@ -489,6 +564,12 @@ function editCard(task) {
   body.appendChild(titleField);
   body.appendChild(row);
   body.appendChild(dateRow);
+  body.appendChild(notesLabel);
+  body.appendChild(notesInput);
+  if (task.kind === "appointment") {
+    body.appendChild(locationInput);
+    body.appendChild(reminderSection);
+  }
   body.appendChild(actions);
   card.appendChild(body);
   return card;
@@ -654,6 +735,23 @@ function taskCard(task) {
 
   body.appendChild(toggleBtn);
   body.appendChild(subList);
+
+  if (task.notes) {
+    const noteToggle = document.createElement("button");
+    noteToggle.type = "button";
+    noteToggle.className = "toggle-subtasks";
+    noteToggle.style.marginLeft = "10px";
+    noteToggle.textContent = task._noteOpen ? "Hide note" : "📝 Note";
+    noteToggle.onclick = () => { task._noteOpen = !task._noteOpen; renderAll(); };
+    body.appendChild(noteToggle);
+
+    if (task._noteOpen) {
+      const noteText = document.createElement("div");
+      noteText.style.cssText = "font-size:12.5px; color:var(--ink-dim); background:var(--panel-2); padding:8px 10px; border-radius:6px; margin-top:6px; white-space:pre-wrap;";
+      noteText.textContent = task.notes;
+      body.appendChild(noteText);
+    }
+  }
 
   card.appendChild(cb);
   card.appendChild(body);

@@ -91,7 +91,7 @@
         </div>
 
         <div class="field hidden" id="locationField" style="margin-bottom:10px;">
-          <label for="locationInput">Location / notes (optional)</label>
+          <label for="locationInput">Location (optional)</label>
           <input type="text" id="locationInput" placeholder="e.g. Client office, 42 Smith St">
         </div>
 
@@ -108,6 +108,12 @@
         </div>
 
         <button type="button" id="repeatToggleBtn" class="chip">🔁 Make this repeat</button>
+        <button type="button" id="noteToggleBtn" class="chip">📝 Add a note</button>
+
+        <div class="hidden" id="noteField" style="margin-top:10px; margin-bottom:4px;">
+          <label for="notesInput" style="font-size:11px; color:var(--ink-faint); text-transform:uppercase; letter-spacing:0.05em; display:block; margin-bottom:4px;">Note</label>
+          <textarea id="notesInput" rows="3" placeholder="Any extra details…" style="width:100%; padding:8px 10px; border:1px solid var(--hairline); border-radius:6px; background:var(--panel-2); font-family:inherit; font-size:13px; resize:vertical;"></textarea>
+        </div>
 
         <div class="hidden" id="repeatOptions">
           <div class="step-label">How often?</div>
@@ -151,6 +157,11 @@
             <label for="checkinDays">Days</label>
             <input type="number" id="checkinDays" min="1" value="3">
           </div>
+        </div>
+        <button type="button" id="checkinNoteToggleBtn" class="chip">📝 Add a note</button>
+        <div class="hidden" id="checkinNoteField" style="margin-top:10px; margin-bottom:4px;">
+          <label for="checkinNotesInput" style="font-size:11px; color:var(--ink-faint); text-transform:uppercase; letter-spacing:0.05em; display:block; margin-bottom:4px;">Note</label>
+          <textarea id="checkinNotesInput" rows="3" placeholder="Any extra details…" style="width:100%; padding:8px 10px; border:1px solid var(--hairline); border-radius:6px; background:var(--panel-2); font-family:inherit; font-size:13px; resize:vertical;"></textarea>
         </div>
         <button type="button" id="finishCheckinBtn" class="add-btn" style="width:100%; margin-top:8px;">Create follow-up</button>
       </div>
