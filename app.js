@@ -861,10 +861,24 @@ function renderSchedule() {
     row.appendChild(hr);
 
     const dayStr = selectedDate.getFullYear() + "-" + String(selectedDate.getMonth()+1).padStart(2,"0") + "-" + String(selectedDate.getDate()).padStart(2,"0");
-    const covering = blocks.find(b => hStr >= b.start && hStr < b.end && blockAppliesToDay(b, dayStr));
+    const coveringBlocks = blocks.filter(b => hStr >= b.start && hStr < b.end && blockAppliesToDay(b, dayStr));
     const dueTasks = tasksDueThisHour(hStr);
 
-    if (covering) {
+    if (!coveringBlocks.length && !dueTasks.length) {
+      const blk = document.createElement("button");
+      blk.type = "button";
+      blk.className = "block empty";
+      blk.textContent = "Open";
+      blk.onclick = () => toggleBlockForm(true, hStr);
+      row.appendChild(blk);
+      sched.appendChild(row);
+      continue;
+    }
+
+    const items = document.createElement("div");
+    items.className = "hour-items";
+
+    coveringBlocks.forEach(covering => {
       const biz = bizById(covering.business);
       const blk = document.createElement("div");
       blk.className = "block";
@@ -885,26 +899,21 @@ function renderSchedule() {
         rm.onclick = () => { blocks = blocks.filter(b => b.id !== covering.id); saveBlocks(); renderAll(); };
         blk.appendChild(rm);
       }
-      row.appendChild(blk);
-    } else if (dueTasks.length) {
-      dueTasks.forEach(t => {
-        const biz = bizById(t.business);
-        const blk = document.createElement("button");
-        blk.type = "button";
-        blk.className = "block task-block";
-        blk.style.background = biz.color;
-        blk.innerHTML = `<span>📌 ${t.title}${t.status === "done" ? " ✓" : ""}</span>`;
-        blk.onclick = () => jumpToTask(t.id);
-        row.appendChild(blk);
-      });
-    } else {
+      items.appendChild(blk);
+    });
+
+    dueTasks.forEach(t => {
+      const biz = bizById(t.business);
       const blk = document.createElement("button");
       blk.type = "button";
-      blk.className = "block empty";
-      blk.textContent = "Open";
-      blk.onclick = () => toggleBlockForm(true, hStr);
-      row.appendChild(blk);
-    }
+      blk.className = "block task-block";
+      blk.style.background = biz.color;
+      blk.innerHTML = `<span>📌 ${t.title}${t.status === "done" ? " ✓" : ""}</span>`;
+      blk.onclick = () => jumpToTask(t.id);
+      items.appendChild(blk);
+    });
+
+    row.appendChild(items);
     sched.appendChild(row);
   }
 }
