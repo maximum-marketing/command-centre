@@ -1213,7 +1213,10 @@ function checkReminders() {
       }
     }
   });
-  if (changed) { saveTasks(); renderAll(); }
+  if (changed) {
+    saveTasks();
+    if (!isEditingInProgress()) renderAll(); // avoid wiping an in-progress edit form
+  }
 }
 function notify(title, body) {
   if ("Notification" in window && Notification.permission === "granted") {
@@ -1312,8 +1315,16 @@ async function pushToCloud() {
   syncing = false;
 }
 
+function isEditingInProgress() {
+  return tasks.some(t => t._editing) || !!editingBlockId;
+}
+
 async function pullFromCloud(isInitial) {
   if (!sb || syncing) return;
+  if (isEditingInProgress()) {
+    setSyncStatus("Paused while editing…");
+    return; // don't overwrite the list mid-edit — we'll catch up on the next check
+  }
   try {
     const { data, error } = await sb.from("app_state")
       .select("id,data")
