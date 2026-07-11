@@ -48,6 +48,7 @@ aside{
   padding:20px 0;
 }
 .logo{display:flex; align-items:center; gap:10px; padding:0 20px 4px;}
+.mobile-cat-row{display:none;}
 .logo-mark{
   width:22px; height:22px; flex-shrink:0;
   display:grid; grid-template-columns:1fr 1fr; grid-template-rows:1fr 1fr;
@@ -234,13 +235,17 @@ main{flex:1; display:flex; flex-direction:column; min-width:0;}
   .tasks-col{flex:none; overflow-y:visible;}
 
   aside{
-    width:100%; flex-direction:row; align-items:center; gap:14px;
-    padding:12px 14px; overflow-x:auto; white-space:nowrap;
+    width:100%; flex-direction:row; flex-wrap:wrap; align-items:center; gap:14px;
+    padding:12px 14px; overflow-x:visible; white-space:nowrap;
     border-right:none; border-bottom:1px solid var(--hairline);
   }
   .logo{padding:0; flex-shrink:0;}
   .logo-text span{display:none;}
-  nav{margin-top:0; display:flex; gap:6px; flex-shrink:0;}
+  .mobile-cat-row{display:flex; gap:8px; align-items:center; flex-basis:100%; order:2;}
+  #categoryFilterSelect{flex:1; padding:9px 10px; border:1px solid var(--hairline); border-radius:6px; background:var(--panel-2); color:var(--ink); font-size:14px;}
+  #toggleCatManageBtn{background:var(--panel-2); border:1px solid var(--hairline); border-radius:6px; width:36px; height:36px; flex-shrink:0; font-size:15px;}
+  nav{display:none; margin-top:0; gap:6px; flex-shrink:0; flex-basis:100%; order:3;}
+  nav.mobile-show{display:flex; flex-direction:column;}
   .nav-label{display:none;}
   .biz-item{padding:7px 12px; border-radius:16px; border:1px solid var(--hairline); border-left:1px solid var(--hairline); white-space:nowrap;}
   .biz-item.active{border-left-color:var(--hairline);}

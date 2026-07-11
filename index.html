@@ -19,6 +19,10 @@
     <div class="logo-mark"><div></div><div></div><div></div><div></div></div>
     <div class="logo-text">COMMAND CENTRE<span>Task &amp; workflow control</span></div>
   </div>
+  <div class="mobile-cat-row" id="mobileCatRow">
+    <select id="categoryFilterSelect"></select>
+    <button type="button" id="toggleCatManageBtn" title="Manage categories">⚙</button>
+  </div>
   <nav id="bizNav">
     <div class="nav-label">Categories</div>
     <!-- populated by app.js -->
@@ -64,6 +68,7 @@
           <button type="button" class="chip" data-kind="task">📋 Task</button>
           <button type="button" class="chip" data-kind="followup">👋 Follow-up</button>
           <button type="button" class="chip" data-kind="appointment">🗓️ Appointment</button>
+          <button type="button" class="chip" data-kind="call">📞 Call</button>
         </div>
       </div>
       <div class="step hidden" id="stepBiz">
@@ -94,6 +99,20 @@
         <div class="field hidden" id="locationField" style="margin-bottom:10px;">
           <label for="locationInput">Location (optional)</label>
           <input type="text" id="locationInput" placeholder="e.g. Client office, 42 Smith St">
+        </div>
+
+        <div class="hidden" id="callFields" style="margin-bottom:10px;">
+          <div class="field" style="margin-bottom:10px;">
+            <label for="callNameInput">Name</label>
+            <input type="text" id="callNameInput" placeholder="e.g. John Smith">
+          </div>
+          <div class="field">
+            <label for="callPhoneInput">Phone number</label>
+            <div style="display:flex; gap:8px; align-items:center;">
+              <input type="tel" inputmode="tel" id="callPhoneInput" placeholder="e.g. 0412 345 678" style="flex:1;">
+              <div class="mic-btn" id="callPhoneMicBtn" title="Say the phone number">🎤</div>
+            </div>
+          </div>
         </div>
 
         <div class="hidden" id="reminderField" style="margin-bottom:10px;">

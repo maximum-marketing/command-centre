@@ -63,7 +63,22 @@ function renderSidebar() {
     row.appendChild(del);
     nav.appendChild(row);
   });
+
+  // Keep the mobile dropdown in sync with the same filter state
+  const select = document.getElementById("categoryFilterSelect");
+  select.innerHTML = "";
+  const allOpt = document.createElement("option");
+  allOpt.value = "all"; allOpt.textContent = "All tasks";
+  select.appendChild(allOpt);
+  categories.forEach(b => {
+    const opt = document.createElement("option");
+    opt.value = b.id; opt.textContent = b.name;
+    select.appendChild(opt);
+  });
+  select.value = activeFilter;
 }
+document.getElementById("categoryFilterSelect").onchange = (e) => { activeFilter = e.target.value; renderAll(); };
+document.getElementById("toggleCatManageBtn").onclick = () => { document.getElementById("bizNav").classList.toggle("mobile-show"); };
 
 function deleteCategory(id) {
   if (categories.length <= 1) { alert("You need to keep at least one category."); return; }
@@ -155,6 +170,8 @@ function resetWizard() {
   document.getElementById("dueDateInput").value = "";
   document.getElementById("dueTimeInput").value = "";
   document.getElementById("locationInput").value = "";
+  document.getElementById("callNameInput").value = "";
+  document.getElementById("callPhoneInput").value = "";
   document.getElementById("checkinDays").value = "3";
   document.getElementById("repeatCount").value = "4";
   document.getElementById("repeatOptions").classList.add("hidden");
@@ -220,11 +237,13 @@ document.querySelectorAll("[data-priority]").forEach(btn => {
       showStep("stepCheckin");
       return;
     }
-    // Task or appointment: show the date step, adjusted per kind
+    // Task, appointment, or call: show the date step, adjusted per kind
     const isAppt = wizard.kind === "appointment";
-    document.getElementById("dateStepLabel").textContent = isAppt ? "When is it?" : "Due date & time (optional)";
+    const isCall = wizard.kind === "call";
+    document.getElementById("dateStepLabel").textContent = isAppt ? "When is it?" : isCall ? "When should you call? (optional)" : "Due date & time (optional)";
     document.getElementById("locationField").classList.toggle("hidden", !isAppt);
     document.getElementById("reminderField").classList.toggle("hidden", !isAppt);
+    document.getElementById("callFields").classList.toggle("hidden", !isCall);
     document.getElementById("skipDateBtn").classList.toggle("hidden", isAppt);
     showStep("stepDate");
   };
@@ -317,12 +336,14 @@ function finishAdd(withDate) {
   const location = document.getElementById("locationInput").value.trim() || null;
   const notes = document.getElementById("notesInput").value.trim() || null;
   const reminderOffsets = wizard.kind === "appointment" ? [...wizard.reminderOffsets] : null;
+  const callName = wizard.kind === "call" ? (document.getElementById("callNameInput").value.trim() || null) : null;
+  const callPhone = wizard.kind === "call" ? (document.getElementById("callPhoneInput").value.trim() || null) : null;
   const useRepeat = due && wizard.repeatOn && wizard.freq;
 
   if (!useRepeat) {
     tasks.push({
       id: uid(), title: wizard.title, business: wizard.business, priority: wizard.priority,
-      kind: wizard.kind, location, reminderOffsets, notes,
+      kind: wizard.kind, location, reminderOffsets, notes, callName, callPhone,
       due: due ? due.toISOString() : null, status: "open", subtasks: [], lastNotified: null,
       recurring: null, remindersFired: [],
     });
@@ -341,7 +362,7 @@ function finishAdd(withDate) {
     while (cur <= endDate && i < MAX_RECURRING_INSTANCES) {
       tasks.push({
         id: uid(), title: wizard.title, business: wizard.business, priority: wizard.priority,
-        kind: wizard.kind, location, reminderOffsets, notes,
+        kind: wizard.kind, location, reminderOffsets, notes, callName, callPhone,
         due: cur.toISOString(), status: "open", subtasks: [], lastNotified: null,
         recurring: wizard.freq, seriesId, remindersFired: [],
       });
@@ -387,9 +408,31 @@ if (SpeechRecognition) {
     micBtn.classList.add("listening");
     rec.start();
   };
+
+  // Second mic, reused for the phone number field on "Call" items
+  const callPhoneMicBtn = document.getElementById("callPhoneMicBtn");
+  const phoneRec = new SpeechRecognition();
+  phoneRec.lang = "en-AU";
+  phoneRec.interimResults = false;
+  phoneRec.onresult = (e) => {
+    const spoken = e.results[0][0].transcript;
+    // Keep digits and a leading + only — voice recognition may add spaces/words around numbers
+    const digitsOnly = spoken.replace(/[^\d+]/g, "");
+    document.getElementById("callPhoneInput").value = digitsOnly || spoken;
+    callPhoneMicBtn.classList.remove("listening");
+  };
+  phoneRec.onerror = () => callPhoneMicBtn.classList.remove("listening");
+  phoneRec.onend = () => callPhoneMicBtn.classList.remove("listening");
+  callPhoneMicBtn.onclick = () => {
+    callPhoneMicBtn.classList.add("listening");
+    phoneRec.start();
+  };
 } else {
   micBtn.title = "Voice input isn't supported in this browser — try typing instead.";
   micBtn.onclick = () => alert("Voice input isn't supported in this browser. Your phone/desktop keyboard mic button will still work in the text field.");
+  const callPhoneMicBtn = document.getElementById("callPhoneMicBtn");
+  callPhoneMicBtn.title = "Voice input isn't supported in this browser — try typing instead.";
+  callPhoneMicBtn.onclick = () => alert("Voice input isn't supported in this browser — you can still type or paste the number.");
 }
 
 /* ---------- TASK LIST ---------- */
@@ -532,6 +575,21 @@ function editCard(task) {
     reminderSection.appendChild(reminderChipsWrap);
   }
 
+  let callNameInput = null, callPhoneInput = null;
+  if (task.kind === "call") {
+    callNameInput = document.createElement("input");
+    callNameInput.type = "text";
+    callNameInput.value = task.callName || "";
+    callNameInput.placeholder = "Name";
+    callNameInput.style.cssText = "font-size:13px; padding:8px 10px; border:1px solid var(--hairline); border-radius:6px; width:100%; margin-bottom:8px; background:var(--panel-2);";
+
+    callPhoneInput = document.createElement("input");
+    callPhoneInput.type = "tel";
+    callPhoneInput.value = task.callPhone || "";
+    callPhoneInput.placeholder = "Phone number";
+    callPhoneInput.style.cssText = "font-size:13px; padding:8px 10px; border:1px solid var(--hairline); border-radius:6px; width:100%; margin-bottom:10px; background:var(--panel-2);";
+  }
+
   const actions = document.createElement("div");
   actions.className = "wizard-actions";
   const saveBtn = document.createElement("button");
@@ -553,6 +611,10 @@ function editCard(task) {
       task.remindersFired = []; // dates/reminders changed — allow reminders to fire again on the new schedule
     }
     task.notes = notesInput.value.trim() || null;
+    if (task.kind === "call") {
+      task.callName = callNameInput.value.trim() || null;
+      task.callPhone = callPhoneInput.value.trim() || null;
+    }
     task._editing = false;
     saveTasks(); renderAll();
   };
@@ -569,6 +631,10 @@ function editCard(task) {
   if (task.kind === "appointment") {
     body.appendChild(locationInput);
     body.appendChild(reminderSection);
+  }
+  if (task.kind === "call") {
+    body.appendChild(callNameInput);
+    body.appendChild(callPhoneInput);
   }
   body.appendChild(actions);
   card.appendChild(body);
@@ -607,7 +673,7 @@ function taskCard(task) {
   titleRow.className = "title-row";
   const title = document.createElement("div");
   title.className = "title";
-  const KIND_ICON = { followup: "👋 ", appointment: "🗓️ " };
+  const KIND_ICON = { followup: "👋 ", appointment: "🗓️ ", call: "📞 " };
   title.textContent = (KIND_ICON[task.kind] || "") + task.title;
   const del = document.createElement("button");
   del.type = "button";
@@ -652,6 +718,10 @@ function taskCard(task) {
     metaHtml += ` · ${task.kind === "appointment" ? "" : "Due "}${d.toLocaleDateString(undefined,{month:'short',day:'numeric'})}, ${d.toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'})}`;
   }
   if (task.location) metaHtml += ` · 📍 ${task.location}`;
+  if (task.kind === "call" && (task.callName || task.callPhone)) {
+    metaHtml += ` · ${task.callName || ""}`;
+    if (task.callPhone) metaHtml += ` <a href="tel:${task.callPhone.replace(/\s+/g,'')}" style="color:${biz.color}; font-weight:600;">📞 ${task.callPhone}</a>`;
+  }
   if (task.recurring && FREQ_LABEL[task.recurring]) metaHtml += ` · ${FREQ_LABEL[task.recurring]}`;
 
   const appt = apptCountdown(task);
