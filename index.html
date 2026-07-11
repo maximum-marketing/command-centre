@@ -69,6 +69,25 @@
         <input type="text" id="taskInput" placeholder="Type a task — or tap the mic">
         <div class="mic-btn" id="micBtn" title="Add task by voice">🎤</div>
         <button type="button" id="titleNextBtn" class="add-btn">Next</button>
+        <div class="mic-btn" id="quickCallBtn" title="Quick log a call">📞</div>
+      </div>
+      <div class="hidden" id="quickCallPanel" style="margin-top:10px;">
+        <div class="step-label">Quick call</div>
+        <div class="field" style="margin-bottom:8px;">
+          <label for="quickCallName">Name</label>
+          <input type="text" id="quickCallName" placeholder="e.g. John Smith">
+        </div>
+        <div class="field" style="margin-bottom:10px;">
+          <label for="quickCallPhone">Phone number</label>
+          <div style="display:flex; gap:8px; align-items:center;">
+            <input type="tel" inputmode="tel" id="quickCallPhone" placeholder="e.g. 0412 345 678" style="flex:1;">
+            <div class="mic-btn" id="quickCallPhoneMicBtn" title="Say the phone number">🎤</div>
+          </div>
+        </div>
+        <div class="wizard-actions">
+          <button type="button" id="quickCallCancelBtn" class="ghost-btn">Cancel</button>
+          <button type="button" id="quickCallSaveBtn" class="add-btn">Log call</button>
+        </div>
       </div>
       <div class="step hidden" id="stepKind">
         <div class="step-label">What kind of item is this?</div>

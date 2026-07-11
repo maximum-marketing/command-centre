@@ -148,6 +148,8 @@ function populateBizSelects() {
     chip.dataset.business = b.id;
     chip.onclick = () => {
       wizard.business = b.id;
+      lastCategoryUsed = b.id;
+      localStorage.setItem("cc_last_category", b.id);
       [...chipWrap.children].forEach(c => c.classList.remove("selected"));
       chip.classList.add("selected");
       showStep("stepPriority");
@@ -158,6 +160,7 @@ function populateBizSelects() {
 
 /* ---------- ADD-TASK WIZARD ---------- */
 const DEFAULT_APPT_OFFSETS = ["1d", "1h"];
+let lastCategoryUsed = localStorage.getItem("cc_last_category") || null;
 const wizard = { title: "", kind: "task", business: null, priority: null, repeatOn: false, freq: null, durationType: null, reminderOffsets: [...DEFAULT_APPT_OFFSETS] };
 const STEP_IDS = ["stepTitle", "stepKind", "stepBiz", "stepPriority", "stepDate", "stepCheckin"];
 
@@ -441,13 +444,61 @@ if (SpeechRecognition) {
     callPhoneMicBtn.classList.add("listening");
     phoneRec.start();
   };
+
+  // Third mic, for the quick-call shortcut panel
+  const quickCallPhoneMicBtn = document.getElementById("quickCallPhoneMicBtn");
+  const quickPhoneRec = new SpeechRecognition();
+  quickPhoneRec.lang = "en-AU";
+  quickPhoneRec.interimResults = false;
+  quickPhoneRec.onresult = (e) => {
+    const spoken = e.results[0][0].transcript;
+    const digitsOnly = spoken.replace(/[^\d+]/g, "");
+    document.getElementById("quickCallPhone").value = digitsOnly || spoken;
+    quickCallPhoneMicBtn.classList.remove("listening");
+  };
+  quickPhoneRec.onerror = () => quickCallPhoneMicBtn.classList.remove("listening");
+  quickPhoneRec.onend = () => quickCallPhoneMicBtn.classList.remove("listening");
+  quickCallPhoneMicBtn.onclick = () => {
+    quickCallPhoneMicBtn.classList.add("listening");
+    quickPhoneRec.start();
+  };
 } else {
   micBtn.title = "Voice input isn't supported in this browser — try typing instead.";
   micBtn.onclick = () => alert("Voice input isn't supported in this browser. Your phone/desktop keyboard mic button will still work in the text field.");
   const callPhoneMicBtn = document.getElementById("callPhoneMicBtn");
   callPhoneMicBtn.title = "Voice input isn't supported in this browser — try typing instead.";
   callPhoneMicBtn.onclick = () => alert("Voice input isn't supported in this browser — you can still type or paste the number.");
+  const quickCallPhoneMicBtn = document.getElementById("quickCallPhoneMicBtn");
+  quickCallPhoneMicBtn.title = "Voice input isn't supported in this browser — try typing instead.";
+  quickCallPhoneMicBtn.onclick = () => alert("Voice input isn't supported in this browser — you can still type or paste the number.");
 }
+
+/* ---------- QUICK CALL SHORTCUT ---------- */
+document.getElementById("quickCallBtn").onclick = () => {
+  document.getElementById("quickCallPanel").classList.toggle("hidden");
+  document.getElementById("quickCallName").focus();
+};
+document.getElementById("quickCallCancelBtn").onclick = () => {
+  document.getElementById("quickCallName").value = "";
+  document.getElementById("quickCallPhone").value = "";
+  document.getElementById("quickCallPanel").classList.add("hidden");
+};
+document.getElementById("quickCallSaveBtn").onclick = () => {
+  const name = document.getElementById("quickCallName").value.trim();
+  const phone = document.getElementById("quickCallPhone").value.trim();
+  if (!name && !phone) { alert("Add at least a name or a phone number."); return; }
+  const business = lastCategoryUsed && categories.some(c => c.id === lastCategoryUsed) ? lastCategoryUsed : categories[0].id;
+  tasks.push({
+    id: uid(), title: "Call " + (name || phone), business, priority: "med",
+    kind: "call", callName: name || null, callPhone: phone || null,
+    due: null, status: "open", subtasks: [], lastNotified: null, recurring: null, notes: null,
+  });
+  saveTasks();
+  document.getElementById("quickCallName").value = "";
+  document.getElementById("quickCallPhone").value = "";
+  document.getElementById("quickCallPanel").classList.add("hidden");
+  renderAll();
+};
 
 /* ---------- TASK LIST ---------- */
 function overdueInfo(task) {
