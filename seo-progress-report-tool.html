@@ -1,0 +1,1466 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Maximum Marketing Solutions — SEO Progress Report</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  :root{
+    --navy:#101B3D;
+    --navy-light:#1B2A5C;
+    --green:#1FA87A;
+    --green-light:#E4F5EE;
+    --red:#C0392B;
+    --red-light:#FBEAE7;
+    --amber:#E8A33D;
+    --amber-light:#FBF0DE;
+    --paper:#F7F6F2;
+    --card:#FFFFFF;
+    --ink:#1A1F2B;
+    --muted:#6B7280;
+    --border:#E3E1DA;
+    --radius:10px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'Inter',sans-serif;
+    line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+  }
+  h1,h2,h3{ font-family:'Space Grotesk',sans-serif; margin:0; color:var(--navy); }
+  .mono{ font-family:'IBM Plex Mono',monospace; }
+  .eyebrow{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11px;
+    letter-spacing:.12em;
+    text-transform:uppercase;
+    color:var(--muted);
+    display:flex; align-items:center; gap:8px;
+  }
+  a{color:var(--navy);}
+  button{ font-family:'Inter',sans-serif; cursor:pointer; }
+  input, select, textarea{ font-family:'Inter',sans-serif; }
+
+  /* ---------- ascent mark (signature element) ---------- */
+  .ascent{ display:inline-flex; align-items:flex-end; gap:2px; height:14px; }
+  .ascent i{ display:block; width:3px; background:var(--green); border-radius:1px; }
+  .ascent i:nth-child(1){height:4px;}
+  .ascent i:nth-child(2){height:8px;}
+  .ascent i:nth-child(3){height:11px;}
+  .ascent i:nth-child(4){height:14px;}
+
+  /* ---------- layout shells ---------- */
+  .wrap{ max-width:980px; margin:0 auto; padding:40px 24px 100px; }
+  .topbar{
+    background:var(--navy); color:#fff; padding:22px 0;
+  }
+  .topbar .wrap{ padding:0 24px; display:flex; align-items:center; justify-content:space-between; }
+  .brand{ display:flex; align-items:center; gap:14px; }
+  .brand-mark{ width:34px; height:34px; border-radius:8px; background:var(--green); display:flex; align-items:center; justify-content:center; }
+  .brand-logo{ background:#fff; border-radius:8px; padding:7px 12px; display:flex; align-items:center; }
+  .brand-logo img{ height:26px; width:auto; display:block; }
+  .brand-name{ font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:16px; letter-spacing:.01em; }
+  .brand-sub{ font-family:'IBM Plex Mono',monospace; font-size:10.5px; color:#AEB8DA; letter-spacing:.08em; text-transform:uppercase; }
+
+  /* ---------- setup screen ---------- */
+  .setup-card{ background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:36px; margin-top:28px; }
+  .setup-card h1{ font-size:26px; margin-bottom:6px; }
+  .setup-card p.lead{ color:var(--muted); margin:0 0 28px; font-size:14.5px; max-width:560px; }
+  .field-row{ display:grid; grid-template-columns:1fr 1fr; gap:18px; margin-bottom:22px; }
+  .field label{ display:block; font-size:12.5px; font-weight:600; color:var(--navy); margin-bottom:6px; }
+  .field input[type=text], .field input[type=number]{
+    width:100%; padding:10px 12px; border:1px solid var(--border); border-radius:7px; font-size:14px; background:#fff;
+  }
+  .field input:focus, select:focus, textarea:focus{ outline:2px solid var(--green); outline-offset:1px; }
+
+  .upload-grid{ display:grid; grid-template-columns:1fr 1fr; gap:18px; margin:8px 0 8px; }
+  .upload-box{
+    border:1.5px dashed var(--border); border-radius:var(--radius); padding:20px; background:var(--paper); position:relative;
+  }
+  .upload-box.optional{ border-style:dashed; }
+  .upload-box h3{ font-size:14.5px; margin-bottom:3px; }
+  .upload-box .hint{ font-size:12px; color:var(--muted); margin-bottom:12px; }
+  .upload-box input[type=file]{ font-size:12.5px; width:100%; }
+  .file-status{ margin-top:10px; font-size:12.5px; color:var(--green); font-weight:600; display:none; }
+  .file-status.show{ display:block; }
+  .mapping{ margin-top:14px; display:none; border-top:1px solid var(--border); padding-top:12px; }
+  .mapping.show{ display:block; }
+  .map-row{ display:flex; align-items:center; gap:8px; margin-bottom:8px; font-size:12.5px; }
+  .map-row label{ width:78px; flex-shrink:0; color:var(--muted); font-weight:600; }
+  .map-row select{ flex:1; padding:6px 8px; border:1px solid var(--border); border-radius:6px; font-size:12.5px; background:#fff; }
+
+  .btn{
+    display:inline-flex; align-items:center; gap:8px; padding:12px 22px; border-radius:8px; border:none;
+    font-weight:600; font-size:14px; transition:transform .08s ease;
+  }
+  .btn:active{ transform:scale(.98); }
+  .btn-primary{ background:var(--green); color:#fff; }
+  .btn-primary:disabled{ background:#C9CDD6; cursor:not-allowed; }
+  .btn-ghost{ background:transparent; color:var(--navy); border:1px solid var(--border); }
+  .btn-amber{ background:var(--amber); color:#fff; }
+  .actions{ margin-top:28px; display:flex; align-items:center; gap:14px; }
+  .setup-note{ font-size:12px; color:var(--muted); }
+
+  /* ---------- report screen ---------- */
+  .report-nav{
+    position:sticky; top:0; z-index:20; background:rgba(16,27,61,.97); backdrop-filter:blur(6px);
+    padding:12px 0;
+  }
+  .report-nav .wrap{ padding:0 24px; display:flex; align-items:center; justify-content:space-between; gap:16px; }
+  .report-nav .links{ display:flex; gap:18px; flex-wrap:wrap; }
+  .report-nav a{ color:#C7CEE8; text-decoration:none; font-size:12.5px; font-weight:600; letter-spacing:.02em; }
+  .report-nav a:hover{ color:#fff; }
+  .nav-btns{ display:flex; gap:10px; }
+  .nav-btns button{ padding:8px 14px; font-size:12.5px; border-radius:7px; border:1px solid #33407A; background:transparent; color:#E7EAF5; font-weight:600; }
+  .nav-btns button:hover{ background:#1B2A5C; }
+
+  .hero{ padding:44px 0 8px; }
+  .report-logo{ height:34px; width:auto; display:block; margin-bottom:18px; }
+  .hero .eyebrow{ margin-bottom:10px; }
+  .hero h1{ font-size:32px; line-height:1.15; }
+  .hero .meta{ color:var(--muted); font-size:13.5px; margin-top:8px; }
+
+  .stat-grid{ display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin:28px 0 10px; }
+  .stat-card{ background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:18px; }
+  .stat-card .label{ font-size:11.5px; color:var(--muted); font-weight:600; text-transform:uppercase; letter-spacing:.05em; margin-bottom:8px; }
+  .stat-card .value{ font-family:'IBM Plex Mono',monospace; font-size:26px; font-weight:600; color:var(--navy); }
+  .stat-card .value.green{ color:var(--green); }
+  .stat-card .value.red{ color:var(--red); }
+  .stat-card .sub.red-text{ color:var(--red); font-weight:600; }
+  .stat-card .sub{ font-size:12px; color:var(--muted); margin-top:4px; }
+
+  .visibility-panel{ background:var(--navy); border-radius:var(--radius); padding:26px 28px; margin:22px 0; color:#fff; }
+  .visibility-panel .row{ display:flex; align-items:center; justify-content:space-between; gap:24px; flex-wrap:wrap; }
+  .vp-section-label{ font-family:'IBM Plex Mono',monospace; font-size:11.5px; letter-spacing:.08em; text-transform:uppercase; color:#C7CEE8; font-weight:600; margin-bottom:14px; }
+  .vp-section-divider{ border-top:1px solid #26356B; margin:22px 0 20px; }
+  .vp-block{ flex:1; min-width:180px; }
+  .vp-label{ font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:.1em; text-transform:uppercase; color:#9AA6D1; margin-bottom:6px; }
+  .vp-value{ font-family:'IBM Plex Mono',monospace; font-size:22px; font-weight:600; }
+  .bar-track{ height:10px; background:#26356B; border-radius:5px; overflow:hidden; margin-top:8px; }
+  .bar-fill{ height:100%; background:var(--green); border-radius:5px; }
+  .vp-change{ text-align:center; }
+  .vp-change .big{ font-family:'Space Grotesk',sans-serif; font-size:34px; font-weight:700; color:var(--green); }
+  .vp-change .big.down{ color:#FF8A75; }
+  .vp-change .small{ font-size:11.5px; color:#9AA6D1; margin-top:2px; }
+  .vp-note{ font-size:11px; color:#8590BC; margin-top:16px; border-top:1px solid #26356B; padding-top:12px; }
+
+  section.block{ margin:52px 0; scroll-margin-top:80px; }
+  .block-head{ display:flex; align-items:baseline; justify-content:space-between; margin-bottom:6px; flex-wrap:wrap; gap:8px; }
+  .block-head h2{ font-size:21px; display:flex; align-items:center; gap:10px; }
+  .block-desc{ color:var(--muted); font-size:13.5px; margin:4px 0 18px; max-width:640px; }
+
+  .pill{ display:inline-flex; align-items:center; padding:3px 9px; border-radius:20px; font-size:11px; font-weight:700; }
+  .pill-green{ background:var(--green-light); color:#0E7A56; }
+  .pill-amber{ background:var(--amber-light); color:#9C6317; }
+  .pill-navy{ background:#EAEDF7; color:var(--navy); }
+
+  table{ width:100%; border-collapse:collapse; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); overflow:hidden; }
+  thead th{ text-align:left; font-size:11px; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); background:#F2F1EC; padding:11px 14px; border-bottom:1px solid var(--border); font-weight:700; }
+  tbody td{ padding:11px 14px; border-bottom:1px solid #EFEEE9; font-size:13.5px; }
+  tbody tr:last-child td{ border-bottom:none; }
+  tbody tr:hover{ background:#FBFAF7; }
+  td.num, th.num{ text-align:right; font-family:'IBM Plex Mono',monospace; }
+  .change-up{ color:#0E7A56; font-weight:700; }
+  .change-flat{ color:var(--muted); }
+  .change-down{ color:var(--red); font-weight:700; }
+  .kw-cell{ font-weight:600; }
+  .table-controls{ display:flex; align-items:center; gap:12px; margin-bottom:12px; flex-wrap:wrap; }
+  .table-controls input[type=text]{ padding:8px 12px; border:1px solid var(--border); border-radius:7px; font-size:13px; min-width:220px; }
+  .table-controls select{ padding:8px 10px; border:1px solid var(--border); border-radius:7px; font-size:13px; }
+  .empty-note{ background:#fff; border:1px dashed var(--border); border-radius:var(--radius); padding:26px; text-align:center; color:var(--muted); font-size:13.5px; }
+  .competitor-subhead{ font-family:'Space Grotesk',sans-serif; font-weight:600; font-size:15.5px; color:var(--navy); margin:22px 0 10px; display:flex; align-items:center; gap:8px; }
+  .competitor-subhead:first-child{ margin-top:0; }
+  .competitor-subhead::before{ content:''; width:8px; height:8px; border-radius:50%; background:var(--amber); display:inline-block; }
+  .table-subhead{ font-size:11.5px; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); margin:14px 0 8px; }
+  .table-note{ font-size:11.5px; color:var(--muted); margin:8px 0 20px; }
+
+  .mover-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:12px; }
+
+  .tier-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-bottom:20px; }
+  .tier-card{ background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:16px 18px; }
+  .tier-card .tier-label{ font-size:11.5px; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); margin-bottom:10px; }
+  .tier-card .tier-row{ display:flex; align-items:baseline; justify-content:space-between; gap:10px; }
+  .tier-card .tier-values{ font-family:'IBM Plex Mono',monospace; font-size:20px; font-weight:600; color:var(--navy); }
+  .tier-card .tier-values .arrow{ color:var(--muted); font-weight:400; margin:0 4px; }
+  .tier-card .tier-delta{ font-family:'IBM Plex Mono',monospace; font-size:12.5px; font-weight:700; padding:2px 9px; border-radius:20px; background:var(--green-light); color:#0E7A56; white-space:nowrap; }
+  .tier-card .tier-delta.flat{ background:#EAEDF7; color:var(--navy); }
+  .tier-card .tier-delta.down{ background:var(--red-light); color:var(--red); }
+  .tier-card .tier-values.down{ color:var(--red); }
+  .tier-card .tier-sub{ font-size:11.5px; color:var(--muted); margin-top:8px; }
+  .mover-card{ background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:16px; }
+  .mover-card .kw{ font-weight:700; font-size:14px; margin-bottom:8px; }
+  .mover-card .movement{ display:flex; align-items:center; gap:8px; font-family:'IBM Plex Mono',monospace; font-size:13px; }
+  .mover-card .arrow{ color:var(--green); font-weight:700; }
+  .mover-card .delta{ margin-left:auto; background:var(--green-light); color:#0E7A56; font-weight:700; padding:2px 8px; border-radius:20px; font-size:11.5px; }
+
+  textarea.comment-box{
+    width:100%; min-height:90px; padding:12px 14px; border:1px solid var(--border); border-radius:8px; font-size:13.5px;
+    resize:vertical; background:#fff; color:var(--ink);
+  }
+  .comment-field{ margin-bottom:18px; }
+  .comment-field label{ display:block; font-size:12.5px; font-weight:700; color:var(--navy); margin-bottom:6px; }
+  .comment-field-head{ display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:6px; }
+  .comment-field-head label{ margin-bottom:0; }
+  .suggest-btn{
+    font-family:'Inter',sans-serif; font-size:11.5px; font-weight:600; color:var(--navy);
+    background:var(--amber-light); border:1px solid #F0DBAE; padding:4px 10px; border-radius:6px; cursor:pointer;
+  }
+  .suggest-btn:hover{ background:var(--amber); color:#fff; }
+  .save-row{ display:flex; align-items:center; gap:14px; margin-top:6px; }
+  .save-status{ font-size:12.5px; color:var(--green); font-weight:600; opacity:0; transition:opacity .3s; max-width:360px; }
+  .save-status.show{ opacity:1; }
+
+  footer.report-footer{ margin-top:70px; padding-top:22px; border-top:1px solid var(--border); color:var(--muted); font-size:12px; display:flex; justify-content:space-between; }
+
+  .threshold-row{ display:flex; align-items:center; gap:10px; margin-bottom:16px; font-size:13px; color:var(--muted); }
+  .threshold-row input{ width:90px; padding:6px 8px; border:1px solid var(--border); border-radius:6px; font-size:13px; }
+
+  @media (max-width:760px){
+    .field-row, .upload-grid, .stat-grid, .mover-grid{ grid-template-columns:1fr; }
+    .report-nav .links{ display:none; }
+  }
+
+  @media print{
+    .report-nav, .no-print{ display:none !important; }
+    body{ background:#fff; }
+    .visibility-panel{ -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+    section.block{ page-break-inside:avoid; margin:26px 0; }
+    .hero{ padding-top:0; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ============ SETUP SCREEN ============ -->
+<div id="setup-screen">
+  <div class="topbar">
+    <div class="wrap">
+      <div class="brand">
+        <div class="brand-logo">
+          <img src="https://static.wixstatic.com/media/e782aa_aa653206d60a4213845fdb217c82f245~mv2.png/v1/fill/w_219,h_84,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/e782aa_aa653206d60a4213845fdb217c82f245~mv2.png" alt="Maximum Marketing Solutions logo">
+        </div>
+        <div>
+          <div class="brand-name">Maximum Marketing Solutions</div>
+          <div class="brand-sub">SEO Progress Report Builder</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="wrap">
+    <div class="setup-card">
+      <h1>Build a client report</h1>
+      <p class="lead">Upload the client's starting keyword positions and their current positions. The report highlights the wins — top rankings, big movers, and untapped opportunities — ready to share.</p>
+
+      <div class="field-row">
+        <div class="field">
+          <label for="clientName">Client name</label>
+          <input type="text" id="clientName" placeholder="e.g. Riverside Dental Group">
+        </div>
+        <div class="field">
+          <label for="reportPeriod">Reporting period</label>
+          <input type="text" id="reportPeriod" placeholder="e.g. Jan 2026 – Jul 2026">
+        </div>
+      </div>
+
+      <div class="upload-grid">
+        <div class="upload-box" id="box-initial">
+          <h3>Starting positions</h3>
+          <div class="hint">Keyword rankings from when work began</div>
+          <input type="file" id="file-initial" accept=".xlsx,.xls,.csv">
+          <div class="file-status" id="status-initial"></div>
+          <div class="mapping" id="mapping-initial"></div>
+        </div>
+        <div class="upload-box" id="box-current">
+          <h3>Current positions</h3>
+          <div class="hint">Most recent keyword rankings</div>
+          <input type="file" id="file-current" accept=".xlsx,.xls,.csv">
+          <div class="file-status" id="status-current"></div>
+          <div class="mapping" id="mapping-current"></div>
+        </div>
+      </div>
+
+      <div id="competitor-uploads"></div>
+      <button class="btn btn-ghost no-print" id="add-competitor-btn" type="button" style="margin-top:6px;">+ Add another competitor</button>
+
+      <div class="actions">
+        <button class="btn btn-primary" id="generate-btn" disabled>Generate report</button>
+        <span class="setup-note">Accepts .xlsx, .xls or .csv exports from Google Sheets, Excel, or SEMrush.</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ REPORT SCREEN ============ -->
+<div id="report-screen" style="display:none;">
+  <div class="report-nav">
+    <div class="wrap">
+      <div class="links">
+        <a href="#overview">Overview</a>
+        <a href="#top-keywords">Top Keywords</a>
+        <a href="#big-movers">Big Movers</a>
+        <a href="#opportunities">Opportunities</a>
+        <a href="#competitor" id="nav-competitor" style="display:none;">Competitor Gap</a>
+        <a href="#comments">Comments</a>
+      </div>
+      <div class="nav-btns no-print">
+        <button id="print-btn">Print / Export PDF</button>
+        <button id="reset-btn">New report</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="wrap">
+    <div class="hero" id="overview">
+      <img class="report-logo" src="https://static.wixstatic.com/media/e782aa_aa653206d60a4213845fdb217c82f245~mv2.png/v1/fill/w_219,h_84,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/e782aa_aa653206d60a4213845fdb217c82f245~mv2.png" alt="Maximum Marketing Solutions logo">
+      <div class="eyebrow"><span class="ascent"><i></i><i></i><i></i><i></i></span> SEO Progress Report</div>
+      <h1 id="report-title">Client name</h1>
+      <div class="meta" id="report-meta">Reporting period</div>
+    </div>
+
+    <div class="stat-grid" id="stat-grid"></div>
+
+    <div class="visibility-panel">
+      <div class="row">
+        <div class="vp-block">
+          <div class="vp-label">Starting visibility</div>
+          <div class="vp-value" id="vp-then">—</div>
+          <div class="bar-track"><div class="bar-fill" id="vp-then-bar" style="width:0%;"></div></div>
+        </div>
+        <div class="vp-change">
+          <div class="big" id="vp-delta">—</div>
+          <div class="small">CHANGE IN VISIBILITY</div>
+        </div>
+        <div class="vp-block">
+          <div class="vp-label">Current visibility</div>
+          <div class="vp-value" id="vp-now">—</div>
+          <div class="bar-track"><div class="bar-fill" id="vp-now-bar" style="width:0%;"></div></div>
+        </div>
+      </div>
+      <div class="vp-note" id="vp-methodology"></div>
+    </div>
+
+    <div class="visibility-panel">
+      <div class="vp-section-label">Keyword coverage</div>
+      <div class="row">
+        <div class="vp-block">
+          <div class="vp-label">Starting keywords ranked</div>
+          <div class="vp-value" id="kw-then">—</div>
+          <div class="bar-track"><div class="bar-fill" id="kw-then-bar" style="width:0%;"></div></div>
+        </div>
+        <div class="vp-change">
+          <div class="big" id="kw-delta">—</div>
+          <div class="small">CHANGE IN KEYWORDS RANKING</div>
+        </div>
+        <div class="vp-block">
+          <div class="vp-label">Keywords ranked now</div>
+          <div class="vp-value" id="kw-now">—</div>
+          <div class="bar-track"><div class="bar-fill" id="kw-now-bar" style="width:0%;"></div></div>
+        </div>
+      </div>
+
+      <div class="vp-section-divider"></div>
+
+      <div class="vp-section-label">Estimated audience exposure</div>
+      <div class="row">
+        <div class="vp-block">
+          <div class="vp-label">Starting exposure</div>
+          <div class="vp-value" id="exp-then">—</div>
+          <div class="bar-track"><div class="bar-fill" id="exp-then-bar" style="width:0%;"></div></div>
+        </div>
+        <div class="vp-change">
+          <div class="big" id="exp-delta">—</div>
+          <div class="small">CHANGE IN EXPOSURE</div>
+        </div>
+        <div class="vp-block">
+          <div class="vp-label">Current exposure</div>
+          <div class="vp-value" id="exp-now">—</div>
+          <div class="bar-track"><div class="bar-fill" id="exp-now-bar" style="width:0%;"></div></div>
+        </div>
+      </div>
+      <div class="vp-note" id="exp-methodology"></div>
+    </div>
+
+    <section class="block" id="top-keywords">
+      <div class="block-head"><h2><span class="ascent"><i></i><i></i><i></i><i></i></span> Top ranking keywords</h2></div>
+      <p class="block-desc">How many keywords place in the top 20, top 50, and top 100 now compared with the starting sheet, plus the full list below.</p>
+
+      <div class="tier-grid" id="tier-grid"></div>
+
+      <div class="table-controls no-print">
+        <input type="text" id="top-search" placeholder="Search keywords…">
+        <select id="top-tier-filter">
+          <option value="100">Show: top 100</option>
+          <option value="20">Show: top 20</option>
+          <option value="50">Show: top 50</option>
+        </select>
+        <select id="top-sort">
+          <option value="pos">Sort: current position</option>
+          <option value="change">Sort: biggest improvement</option>
+          <option value="volume">Sort: search volume</option>
+        </select>
+      </div>
+      <div id="top-keywords-table"></div>
+    </section>
+
+    <section class="block" id="big-movers">
+      <div class="block-head"><h2><span class="ascent"><i></i><i></i><i></i><i></i></span> Big movers</h2></div>
+      <p class="block-desc">The keywords that climbed the most since the start of this engagement.</p>
+      <div id="movers-container"></div>
+    </section>
+
+    <section class="block" id="new-page-one" style="display:none;">
+      <div class="block-head"><h2><span class="ascent"><i></i><i></i><i></i><i></i></span> New to page one</h2></div>
+      <p class="block-desc">Keywords that weren't ranking on page one before and are now.</p>
+      <div id="newpage1-table"></div>
+    </section>
+
+    <section class="block" id="opportunities">
+      <div class="block-head"><h2><span class="ascent"><i></i><i></i><i></i><i></i></span> Opportunities to focus on next</h2></div>
+      <p class="block-desc">High-value, commercial-intent keywords sitting on page two — close to a page-one breakthrough with a bit more work.</p>
+      <div class="threshold-row no-print">
+        Minimum monthly search volume:
+        <input type="number" id="opp-threshold" value="0" min="0" step="10">
+        <button class="btn btn-ghost" id="opp-apply" style="padding:6px 14px;font-size:12.5px;">Apply</button>
+      </div>
+      <div id="opportunities-table"></div>
+    </section>
+
+    <section class="block" id="competitor" style="display:none;">
+      <div class="block-head"><h2><span class="ascent"><i></i><i></i><i></i><i></i></span> Competitor gap analysis</h2></div>
+      <p class="block-desc" id="competitor-desc">A full position-by-position comparison against each competitor, plus the specific keywords where there's room to close the gap. Different competitors are shown separately, since businesses often compete with different rivals across different parts of their offering.</p>
+      <div id="competitor-table"></div>
+    </section>
+
+    <section class="block" id="comments">
+      <div class="block-head"><h2><span class="ascent"><i></i><i></i><i></i><i></i></span> Comments &amp; next steps</h2></div>
+      <p class="block-desc" id="comments-desc">Add context for the client — what's driving the wins, and what's planned next. Use <strong>Suggest text</strong> to pull a starting point straight from the data, then edit it however you like.</p>
+
+      <div class="no-print" style="margin-bottom:18px;">
+        <button class="btn btn-ghost" id="autofill-all-btn" type="button">✨ Auto-fill empty fields from data</button>
+      </div>
+
+      <div class="comment-field">
+        <div class="comment-field-head">
+          <label>Overview summary</label>
+          <button type="button" class="suggest-btn no-print" data-target="overview">✨ Suggest text</button>
+        </div>
+        <textarea class="comment-box" id="comment-overview" placeholder="e.g. Strong quarter — visibility is up and three high-intent keywords broke into the top 10..."></textarea>
+      </div>
+      <div class="comment-field">
+        <div class="comment-field-head">
+          <label>Notes on big movers</label>
+          <button type="button" class="suggest-btn no-print" data-target="movers">✨ Suggest text</button>
+        </div>
+        <textarea class="comment-box" id="comment-movers"></textarea>
+      </div>
+      <div class="comment-field">
+        <div class="comment-field-head">
+          <label>Notes on opportunities / next steps</label>
+          <button type="button" class="suggest-btn no-print" data-target="opportunities">✨ Suggest text</button>
+        </div>
+        <textarea class="comment-box" id="comment-opportunities"></textarea>
+      </div>
+      <div class="comment-field" id="comment-competitor-field" style="display:none;">
+        <div class="comment-field-head">
+          <label>Notes on competitor landscape</label>
+          <button type="button" class="suggest-btn no-print" data-target="competitor">✨ Suggest text</button>
+        </div>
+        <textarea class="comment-box" id="comment-competitor"></textarea>
+      </div>
+
+      <div class="save-row no-print">
+        <button class="btn btn-amber" id="save-comments-btn">Save comments</button>
+        <span class="save-status" id="save-status">Saved</span>
+      </div>
+    </section>
+
+    <footer class="report-footer">
+      <span>Prepared by Maximum Marketing Solutions</span>
+      <span id="footer-date"></span>
+    </footer>
+  </div>
+</div>
+
+<script>
+(function(){
+
+/* ---------------------------------------------------------
+   STATE
+--------------------------------------------------------- */
+const state = {
+  clientName: '', period: '',
+  files: { initial: null, current: null },
+  raw: { initial: null, current: null }, // {headers, rows}
+  mapping: { initial: {}, current: {} },
+  merged: [], // {key, keyword, initialPos, currentPos, volume, url}
+  competitors: [], // [{id, name, raw:{headers,rows}|null, mapping:{keyword,position,volume,url}}]
+  competitorMerged: [], // [{id, name, rows:[...]}]
+  oppThreshold: 0,
+  competitorCounter: 0
+};
+
+const COMMERCIAL_MODIFIERS = ['buy','price','pricing','cost','quote','near me','hire','service','services',
+  'company','companies','best','top rated','cheap','affordable','for sale','deal','discount','emergency',
+  'repair','install','installation','consultation','free trial','provider','contractor'];
+
+const CTR_TABLE = {1:31,2:24,3:18,4:13,5:9,6:6,7:4,8:3,9:2,10:2};
+
+// Rough share of searchers who would see (but not necessarily click) a result at a given position —
+// page 1 is seen by nearly everyone who searches, page 2+ is seen by a shrinking minority.
+const IMPRESSION_RATE_BRACKETS = [
+  {max:10, rate:95}, {max:20, rate:35}, {max:30, rate:15}, {max:50, rate:7}, {max:100, rate:3}
+];
+
+/* ---------------------------------------------------------
+   HELPERS
+--------------------------------------------------------- */
+function norm(str){ return (str===undefined||str===null) ? '' : String(str).trim().toLowerCase().replace(/\s+/g,' '); }
+
+function parsePosition(val){
+  if(val===undefined || val===null || val==='') return null;
+  const s = String(val).toLowerCase();
+  if(s.includes('not') || s.includes('n/a') || s.includes('-') && !/\d/.test(s)) return null;
+  const n = parseFloat(String(val).replace(/[^0-9.]/g,''));
+  if(isNaN(n)) return null;
+  return n;
+}
+
+function parseVolume(val){
+  if(val===undefined || val===null || val==='') return null;
+  const n = parseFloat(String(val).replace(/[^0-9.]/g,''));
+  return isNaN(n) ? null : n;
+}
+
+function ctrForPos(p){
+  if(p===null || p===undefined) return 0;
+  const r = Math.round(p);
+  if(r>=1 && r<=10) return CTR_TABLE[r];
+  if(r<=20) return 1;
+  if(r<=50) return 0.3;
+  if(r<=100) return 0.1;
+  return 0;
+}
+
+function impressionRateForPos(p){
+  if(p===null || p===undefined) return 0;
+  const r = Math.round(p);
+  for(const b of IMPRESSION_RATE_BRACKETS){ if(r <= b.max) return b.rate; }
+  return 0;
+}
+
+function isCommercialIntent(keyword){
+  const k = norm(keyword);
+  return COMMERCIAL_MODIFIERS.some(mod => k.includes(mod));
+}
+
+function guessColumn(headers, synonyms){
+  const normHeaders = headers.map(h => norm(h));
+  for(const syn of synonyms){
+    const idx = normHeaders.findIndex(h => h === syn);
+    if(idx !== -1) return idx;
+  }
+  for(const syn of synonyms){
+    const idx = normHeaders.findIndex(h => h.includes(syn));
+    if(idx !== -1) return idx;
+  }
+  return -1;
+}
+
+function fmtNum(n, decimals){
+  if(n===null||n===undefined||isNaN(n)) return '—';
+  decimals = decimals===undefined ? 0 : decimals;
+  return Number(n).toLocaleString(undefined,{maximumFractionDigits:decimals, minimumFractionDigits:decimals});
+}
+
+function escapeHtml(s){
+  return String(s===undefined||s===null?'':s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function slug(s){
+  return norm(s).replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'') || 'client';
+}
+
+function clientLabel(){
+  return (state.clientName && state.clientName.trim()) ? state.clientName.trim() : 'the client';
+}
+
+/* ---------------------------------------------------------
+   FILE PARSING
+--------------------------------------------------------- */
+function parseFile(file, onDone){
+  const reader = new FileReader();
+  reader.onload = function(e){
+    try{
+      const data = new Uint8Array(e.target.result);
+      const wb = XLSX.read(data, {type:'array'});
+      const sheet = wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(sheet, {header:1, defval:''});
+      if(!rows || rows.length < 2){ onDone(new Error('No data rows found in this file.')); return; }
+      const headers = rows[0].map(h => String(h));
+      const dataRows = rows.slice(1).filter(r => r.some(c => String(c).trim() !== ''));
+      onDone(null, {headers, rows: dataRows});
+    }catch(err){
+      onDone(err);
+    }
+  };
+  reader.onerror = function(){ onDone(new Error('Could not read file.')); };
+  reader.readAsArrayBuffer(file);
+}
+
+function buildMappingUI(key, headers){
+  const el = document.getElementById('mapping-' + key);
+  const guessKeyword = guessColumn(headers, ['keyword','keywords','query','search term','search terms']);
+  const guessPosition = guessColumn(headers, ['position','rank','ranking','pos','avg position','current position']);
+  const guessVolume = guessColumn(headers, ['search volume','volume','vol','monthly searches','msv','avg. monthly searches']);
+  const guessUrl = guessColumn(headers, ['url','landing page','page','ranking url']);
+
+  function optionsHtml(selectedIdx){
+    let opts = '<option value="-1">— none —</option>';
+    headers.forEach((h,i) => {
+      opts += '<option value="'+i+'"'+(i===selectedIdx?' selected':'')+'>'+escapeHtml(h || '(column '+(i+1)+')')+'</option>';
+    });
+    return opts;
+  }
+
+  el.innerHTML =
+    '<div class="map-row"><label>Keyword *</label><select data-field="keyword" data-file="'+key+'">'+optionsHtml(guessKeyword)+'</select></div>' +
+    '<div class="map-row"><label>Position *</label><select data-field="position" data-file="'+key+'">'+optionsHtml(guessPosition)+'</select></div>' +
+    '<div class="map-row"><label>Volume</label><select data-field="volume" data-file="'+key+'">'+optionsHtml(guessVolume)+'</select></div>' +
+    '<div class="map-row"><label>URL</label><select data-field="url" data-file="'+key+'">'+optionsHtml(guessUrl)+'</select></div>';
+
+  el.classList.add('show');
+
+  state.mapping[key] = {
+    keyword: guessKeyword, position: guessPosition, volume: guessVolume, url: guessUrl
+  };
+
+  el.querySelectorAll('select').forEach(sel => {
+    sel.addEventListener('change', function(){
+      state.mapping[key][this.dataset.field] = parseInt(this.value, 10);
+      validateGenerateButton();
+    });
+  });
+}
+
+function handleFileInput(key, inputEl){
+  inputEl.addEventListener('change', function(){
+    const file = this.files[0];
+    if(!file) return;
+    const statusEl = document.getElementById('status-' + key);
+    statusEl.classList.remove('show');
+    parseFile(file, function(err, result){
+      if(err){
+        statusEl.textContent = 'Could not read this file — try re-exporting as .xlsx or .csv.';
+        statusEl.style.color = '#B5482A';
+        statusEl.classList.add('show');
+        return;
+      }
+      state.raw[key] = result;
+      statusEl.textContent = '✓ ' + result.rows.length + ' rows loaded';
+      statusEl.style.color = '#0E7A56';
+      statusEl.classList.add('show');
+      buildMappingUI(key, result.headers);
+      validateGenerateButton();
+    });
+  });
+}
+
+function validateGenerateButton(){
+  const btn = document.getElementById('generate-btn');
+  const iMap = state.mapping.initial, cMap = state.mapping.current;
+  const ok = state.raw.initial && state.raw.current &&
+    iMap.keyword >= 0 && iMap.position >= 0 &&
+    cMap.keyword >= 0 && cMap.position >= 0;
+  btn.disabled = !ok;
+}
+
+/* ---------------------------------------------------------
+   MULTI-COMPETITOR UPLOAD UI
+--------------------------------------------------------- */
+function competitorBlockHtml(comp, index){
+  return '' +
+    '<div class="upload-box optional competitor-block" data-comp-id="'+comp.id+'" style="margin-top:18px;">' +
+      '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;">' +
+        '<div style="flex:1;">' +
+          '<h3>Competitor '+index+' <span style="font-weight:400;color:var(--muted);">(optional — SEMrush position export)</span></h3>' +
+          '<input type="text" class="competitor-name-input" data-comp-id="'+comp.id+'" placeholder="Competitor name (e.g. Acme Plumbing)" value="'+escapeHtml(comp.name)+'" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;margin:8px 0 10px;">' +
+        '</div>' +
+        (index > 1 ? '<button type="button" class="btn-ghost remove-competitor-btn no-print" data-comp-id="'+comp.id+'" style="padding:6px 10px;font-size:12px;border-radius:6px;flex-shrink:0;">Remove</button>' : '') +
+      '</div>' +
+      '<div class="hint">Used to surface keywords this competitor ranks for that the client doesn\u2019t yet</div>' +
+      '<input type="file" class="competitor-file-input" data-comp-id="'+comp.id+'" accept=".xlsx,.xls,.csv">' +
+      '<div class="file-status" id="status-'+comp.id+'"></div>' +
+      '<div class="mapping" id="mapping-'+comp.id+'"></div>' +
+    '</div>';
+}
+
+function renderCompetitorUploads(){
+  const container = document.getElementById('competitor-uploads');
+  container.innerHTML = state.competitors.map((c,i) => competitorBlockHtml(c, i+1)).join('');
+}
+
+function addCompetitor(){
+  const id = 'comp' + (state.competitorCounter++);
+  state.competitors.push({ id, name: '', raw: null, mapping: {keyword:-1, position:-1, volume:-1, url:-1} });
+  renderCompetitorUploads();
+}
+
+function removeCompetitor(id){
+  state.competitors = state.competitors.filter(c => c.id !== id);
+  if(!state.competitors.length) addCompetitor();
+  else renderCompetitorUploads();
+}
+
+function buildCompetitorMappingUI(compId, headers){
+  const comp = state.competitors.find(c => c.id === compId);
+  if(!comp) return;
+  const el = document.getElementById('mapping-' + compId);
+  const guessKeyword = guessColumn(headers, ['keyword','keywords','query','search term','search terms']);
+  const guessPosition = guessColumn(headers, ['position','rank','ranking','pos','avg position','current position']);
+  const guessVolume = guessColumn(headers, ['search volume','volume','vol','monthly searches','msv','avg. monthly searches']);
+  const guessUrl = guessColumn(headers, ['url','landing page','page','ranking url']);
+
+  function optionsHtml(selectedIdx){
+    let opts = '<option value="-1">— none —</option>';
+    headers.forEach((h,i) => {
+      opts += '<option value="'+i+'"'+(i===selectedIdx?' selected':'')+'>'+escapeHtml(h || '(column '+(i+1)+')')+'</option>';
+    });
+    return opts;
+  }
+
+  el.innerHTML =
+    '<div class="map-row"><label>Keyword *</label><select data-field="keyword" data-comp-id="'+compId+'">'+optionsHtml(guessKeyword)+'</select></div>' +
+    '<div class="map-row"><label>Position *</label><select data-field="position" data-comp-id="'+compId+'">'+optionsHtml(guessPosition)+'</select></div>' +
+    '<div class="map-row"><label>Volume</label><select data-field="volume" data-comp-id="'+compId+'">'+optionsHtml(guessVolume)+'</select></div>';
+
+  el.classList.add('show');
+  comp.mapping = { keyword: guessKeyword, position: guessPosition, volume: guessVolume, url: guessUrl };
+}
+
+function initCompetitorUploadEvents(){
+  const container = document.getElementById('competitor-uploads');
+
+  container.addEventListener('input', function(e){
+    if(e.target.classList.contains('competitor-name-input')){
+      const comp = state.competitors.find(c => c.id === e.target.dataset.compId);
+      if(comp) comp.name = e.target.value;
+    }
+  });
+
+  container.addEventListener('change', function(e){
+    if(e.target.classList.contains('competitor-file-input')){
+      const compId = e.target.dataset.compId;
+      const file = e.target.files[0];
+      if(!file) return;
+      const statusEl = document.getElementById('status-' + compId);
+      statusEl.classList.remove('show');
+      parseFile(file, function(err, result){
+        if(err){
+          statusEl.textContent = 'Could not read this file — try re-exporting as .xlsx or .csv.';
+          statusEl.style.color = '#B5482A';
+          statusEl.classList.add('show');
+          return;
+        }
+        const comp = state.competitors.find(c => c.id === compId);
+        if(comp) comp.raw = result;
+        statusEl.textContent = '✓ ' + result.rows.length + ' rows loaded';
+        statusEl.style.color = '#0E7A56';
+        statusEl.classList.add('show');
+        buildCompetitorMappingUI(compId, result.headers);
+      });
+    } else if(e.target.tagName === 'SELECT' && e.target.dataset.compId){
+      const comp = state.competitors.find(c => c.id === e.target.dataset.compId);
+      if(comp) comp.mapping[e.target.dataset.field] = parseInt(e.target.value, 10);
+    }
+  });
+
+  container.addEventListener('click', function(e){
+    if(e.target.classList.contains('remove-competitor-btn')){
+      removeCompetitor(e.target.dataset.compId);
+    }
+  });
+
+  document.getElementById('add-competitor-btn').addEventListener('click', addCompetitor);
+}
+
+/* ---------------------------------------------------------
+   DATA MERGE
+--------------------------------------------------------- */
+function extractEntries(raw, mapping){
+  const entries = new Map();
+  raw.rows.forEach(row => {
+    const kwRaw = row[mapping.keyword];
+    const key = norm(kwRaw);
+    if(!key) return;
+    const pos = parsePosition(row[mapping.position]);
+    const vol = mapping.volume >= 0 ? parseVolume(row[mapping.volume]) : null;
+    const url = mapping.url >= 0 ? row[mapping.url] : '';
+    entries.set(key, { keyword: String(kwRaw).trim(), position: pos, volume: vol, url: url });
+  });
+  return entries;
+}
+
+function buildMergedDataset(){
+  const initialEntries = extractEntries(state.raw.initial, state.mapping.initial);
+  const currentEntries = extractEntries(state.raw.current, state.mapping.current);
+
+  const allKeys = new Set([...initialEntries.keys(), ...currentEntries.keys()]);
+  const merged = [];
+  allKeys.forEach(key => {
+    const i = initialEntries.get(key);
+    const c = currentEntries.get(key);
+    merged.push({
+      key,
+      keyword: (c && c.keyword) || (i && i.keyword) || key,
+      initialPos: i ? i.position : null,
+      currentPos: c ? c.position : null,
+      volume: (c && c.volume!=null) ? c.volume : (i ? i.volume : null),
+      url: (c && c.url) || (i && i.url) || ''
+    });
+  });
+  state.merged = merged;
+
+  state.competitorMerged = state.competitors
+    .filter(c => c.raw && c.mapping.keyword >= 0 && c.mapping.position >= 0)
+    .map(c => {
+      const compEntries = extractEntries(c.raw, c.mapping);
+      const rows = [];
+      compEntries.forEach((entry, key) => {
+        const clientEntry = merged.find(m => m.key === key);
+        rows.push({
+          key, keyword: entry.keyword,
+          competitorPos: entry.position,
+          clientPos: clientEntry ? clientEntry.currentPos : null,
+          volume: entry.volume
+        });
+      });
+      return { id: c.id, name: (c.name && c.name.trim()) || 'Competitor', rows };
+    });
+}
+
+/* ---------------------------------------------------------
+   COMPUTED METRICS
+--------------------------------------------------------- */
+function computeStats(){
+  const m = state.merged;
+  const rankedNow = m.filter(x => x.currentPos !== null);
+  const rankedThen = m.filter(x => x.initialPos !== null);
+  const top10Now = rankedNow.filter(x => x.currentPos <= 10).length;
+  const top10Then = rankedThen.filter(x => x.initialPos <= 10).length;
+  const top3Now = rankedNow.filter(x => x.currentPos <= 3).length;
+
+  const top20Now = rankedNow.filter(x => x.currentPos <= 20).length;
+  const top20Then = rankedThen.filter(x => x.initialPos <= 20).length;
+  const top50Now = rankedNow.filter(x => x.currentPos <= 50).length;
+  const top50Then = rankedThen.filter(x => x.initialPos <= 50).length;
+  const top100Now = rankedNow.filter(x => x.currentPos <= 100).length;
+  const top100Then = rankedThen.filter(x => x.initialPos <= 100).length;
+
+  function tierPct(then, now){
+    return then > 0 ? ((now - then) / then * 100) : (now > 0 ? 100 : 0);
+  }
+
+  const both = m.filter(x => x.initialPos !== null && x.currentPos !== null);
+  const improved = both.filter(x => x.initialPos - x.currentPos > 0);
+  const avgImprovement = improved.length ? (improved.reduce((s,x)=> s + (x.initialPos - x.currentPos), 0) / improved.length) : 0;
+
+  const newPage1 = m.filter(x => x.currentPos !== null && x.currentPos <= 10 && (x.initialPos === null || x.initialPos > 10));
+
+  const hasVolume = m.some(x => x.volume !== null && x.volume > 0);
+
+  function visScore(posField){
+    return m.reduce((sum, x) => {
+      const pos = x[posField];
+      if(pos === null) return sum;
+      const ctr = ctrForPos(pos);
+      if(hasVolume){
+        return sum + ((x.volume || 0) * ctr / 100);
+      }
+      return sum + ctr;
+    }, 0);
+  }
+  const scoreThen = visScore('initialPos');
+  const scoreNow = visScore('currentPos');
+  const pctChange = scoreThen > 0 ? ((scoreNow - scoreThen) / scoreThen * 100) : (scoreNow > 0 ? 100 : 0);
+
+  // Keyword coverage: how many keywords are ranked at all (positions 1-100) at start vs now
+  const kwCountThen = rankedThen.length;
+  const kwCountNow = rankedNow.length;
+  const kwCountPctChange = kwCountThen > 0 ? ((kwCountNow - kwCountThen) / kwCountThen * 100) : (kwCountNow > 0 ? 100 : 0);
+
+  // Estimated exposure: how many people would have seen the business in search results at all,
+  // regardless of whether they clicked (unlike the CTR-weighted visibility score above).
+  function exposureScore(posField){
+    return m.reduce((sum, x) => {
+      const pos = x[posField];
+      if(pos === null) return sum;
+      const rate = impressionRateForPos(pos);
+      if(hasVolume){
+        return sum + ((x.volume || 0) * rate / 100);
+      }
+      return sum + rate;
+    }, 0);
+  }
+  const exposureThen = exposureScore('initialPos');
+  const exposureNow = exposureScore('currentPos');
+  const exposurePctChange = exposureThen > 0 ? ((exposureNow - exposureThen) / exposureThen * 100) : (exposureNow > 0 ? 100 : 0);
+
+  return {
+    totalTracked: m.length, rankedNowCount: rankedNow.length,
+    top10Now, top10Then, top3Now,
+    top20Now, top20Then, top20PctChange: tierPct(top20Then, top20Now),
+    top50Now, top50Then, top50PctChange: tierPct(top50Then, top50Now),
+    top100Now, top100Then, top100PctChange: tierPct(top100Then, top100Now),
+    improvedCount: improved.length, avgImprovement,
+    newPage1Count: newPage1.length,
+    hasVolume, scoreThen, scoreNow, pctChange,
+    kwCountThen, kwCountNow, kwCountPctChange,
+    exposureThen, exposureNow, exposurePctChange
+  };
+}
+
+/* ---------------------------------------------------------
+   RENDERING
+--------------------------------------------------------- */
+function renderStatGrid(stats){
+  const grid = document.getElementById('stat-grid');
+  let top10Sub;
+  if(stats.top10Now > stats.top10Then) top10Sub = 'up from ' + fmtNum(stats.top10Then) + ' at the start';
+  else if(stats.top10Now < stats.top10Then) top10Sub = 'down from ' + fmtNum(stats.top10Then) + ' at the start';
+  else top10Sub = 'unchanged since the start';
+
+  const cards = [
+    { label: 'Keywords tracked', value: fmtNum(stats.totalTracked), sub: stats.rankedNowCount + ' currently ranking in top 100' },
+    { label: 'Top 10 rankings', value: fmtNum(stats.top10Now), sub: top10Sub, green: stats.top10Now > stats.top10Then, red: stats.top10Now < stats.top10Then },
+    { label: 'Keywords improved', value: fmtNum(stats.improvedCount), sub: 'avg. climb of ' + fmtNum(stats.avgImprovement,1) + ' positions', green: true },
+    { label: 'New to page 1', value: fmtNum(stats.newPage1Count), sub: 'first-time page-one rankings', green: stats.newPage1Count > 0 }
+  ];
+  grid.innerHTML = cards.map(c =>
+    '<div class="stat-card"><div class="label">'+c.label+'</div><div class="value'+(c.green?' green':(c.red?' red':''))+'">'+c.value+'</div><div class="sub'+(c.red?' red-text':'')+'">'+c.sub+'</div></div>'
+  ).join('');
+}
+
+function renderVisibilityPanel(stats){
+  const maxScore = Math.max(stats.scoreThen, stats.scoreNow, 1);
+  document.getElementById('vp-then').textContent = stats.hasVolume ? fmtNum(stats.scoreThen) + ' est. clicks/mo' : fmtNum(stats.scoreThen) + ' pts';
+  document.getElementById('vp-now').textContent = stats.hasVolume ? fmtNum(stats.scoreNow) + ' est. clicks/mo' : fmtNum(stats.scoreNow) + ' pts';
+  document.getElementById('vp-then-bar').style.width = (stats.scoreThen / maxScore * 100) + '%';
+  document.getElementById('vp-now-bar').style.width = (stats.scoreNow / maxScore * 100) + '%';
+  const deltaEl = document.getElementById('vp-delta');
+  const sign = stats.pctChange >= 0 ? '+' : '';
+  deltaEl.textContent = sign + fmtNum(stats.pctChange,0) + '%';
+  deltaEl.classList.toggle('down', stats.pctChange < 0);
+  document.getElementById('vp-methodology').textContent = stats.hasVolume
+    ? 'Estimated visibility is calculated from industry-standard click-through rates by ranking position, weighted by the monthly search volume of each keyword.'
+    : 'Estimated visibility is calculated using industry-standard click-through rates by ranking position (no search volume data was provided, so this is an unweighted visibility index rather than an estimated traffic figure).';
+}
+
+function renderCoveragePanel(stats){
+  // Keyword coverage row
+  const maxKw = Math.max(stats.kwCountThen, stats.kwCountNow, 1);
+  document.getElementById('kw-then').textContent = fmtNum(stats.kwCountThen);
+  document.getElementById('kw-now').textContent = fmtNum(stats.kwCountNow);
+  document.getElementById('kw-then-bar').style.width = (stats.kwCountThen / maxKw * 100) + '%';
+  document.getElementById('kw-now-bar').style.width = (stats.kwCountNow / maxKw * 100) + '%';
+  const kwDeltaEl = document.getElementById('kw-delta');
+  const kwSign = stats.kwCountPctChange >= 0 ? '+' : '';
+  kwDeltaEl.textContent = kwSign + fmtNum(stats.kwCountPctChange,0) + '%';
+  kwDeltaEl.classList.toggle('down', stats.kwCountPctChange < 0);
+
+  // Estimated exposure row
+  const maxExp = Math.max(stats.exposureThen, stats.exposureNow, 1);
+  document.getElementById('exp-then').textContent = stats.hasVolume ? fmtNum(stats.exposureThen) + ' est. searches/mo' : fmtNum(stats.exposureThen) + ' pts';
+  document.getElementById('exp-now').textContent = stats.hasVolume ? fmtNum(stats.exposureNow) + ' est. searches/mo' : fmtNum(stats.exposureNow) + ' pts';
+  document.getElementById('exp-then-bar').style.width = (stats.exposureThen / maxExp * 100) + '%';
+  document.getElementById('exp-now-bar').style.width = (stats.exposureNow / maxExp * 100) + '%';
+  const expDeltaEl = document.getElementById('exp-delta');
+  const expSign = stats.exposurePctChange >= 0 ? '+' : '';
+  expDeltaEl.textContent = expSign + fmtNum(stats.exposurePctChange,0) + '%';
+  expDeltaEl.classList.toggle('down', stats.exposurePctChange < 0);
+  document.getElementById('exp-methodology').textContent = stats.hasVolume
+    ? 'Estimated exposure reflects how many searches per month would have shown this business a listing, not just clicks — based on typical page-view behaviour (most searchers see all of page 1, far fewer go on to page 2 and beyond).'
+    : 'Estimated exposure reflects how visible the business was in search results overall, not just clicks — based on typical page-view behaviour (most searchers see all of page 1, far fewer go on to page 2 and beyond). No search volume data was provided, so this is an unweighted index rather than an estimated search count.';
+}
+
+function renderTierGrid(stats){
+  const grid = document.getElementById('tier-grid');
+  const tiers = [
+    { label: 'Top 20', then: stats.top20Then, now: stats.top20Now, pct: stats.top20PctChange },
+    { label: 'Top 50', then: stats.top50Then, now: stats.top50Now, pct: stats.top50PctChange },
+    { label: 'Top 100', then: stats.top100Then, now: stats.top100Now, pct: stats.top100PctChange }
+  ];
+  grid.innerHTML = tiers.map(t => {
+    const improved = t.now > t.then;
+    const flat = t.now === t.then;
+    const sign = t.pct >= 0 ? '+' : '';
+    const deltaClass = flat ? ' flat' : (improved ? '' : ' down');
+    const valuesClass = (!flat && !improved) ? ' down' : '';
+    return '<div class="tier-card">' +
+      '<div class="tier-label">Keywords in ' + t.label + '</div>' +
+      '<div class="tier-row">' +
+        '<div class="tier-values' + valuesClass + '">' + fmtNum(t.then) + '<span class="arrow">→</span>' + fmtNum(t.now) + '</div>' +
+        '<div class="tier-delta' + deltaClass + '">' + sign + fmtNum(t.pct,0) + '%</div>' +
+      '</div>' +
+      '<div class="tier-sub">' + (improved ? 'up from ' + fmtNum(t.then) + ' at the start' : (flat ? 'unchanged since the start' : 'down from ' + fmtNum(t.then) + ' at the start')) + '</div>' +
+    '</div>';
+  }).join('');
+}
+
+function renderTopKeywordsTable(){
+  const searchVal = norm(document.getElementById('top-search').value);
+  const sortMode = document.getElementById('top-sort').value;
+  const tierLimit = parseInt(document.getElementById('top-tier-filter').value, 10) || 100;
+
+  let rows = state.merged.filter(x => x.currentPos !== null && x.currentPos <= tierLimit);
+  if(searchVal) rows = rows.filter(x => norm(x.keyword).includes(searchVal));
+
+  if(sortMode === 'pos') rows.sort((a,b) => a.currentPos - b.currentPos);
+  else if(sortMode === 'change') rows.sort((a,b) => (b.initialPos!==null && b.currentPos!==null ? b.initialPos-b.currentPos : -999) - (a.initialPos!==null && a.currentPos!==null ? a.initialPos-a.currentPos : -999));
+  else if(sortMode === 'volume') rows.sort((a,b) => (b.volume||0) - (a.volume||0));
+
+  const container = document.getElementById('top-keywords-table');
+  if(!rows.length){ container.innerHTML = '<div class="empty-note">No keywords match yet — once rankings come through they will appear here.</div>'; return; }
+
+  let html = '<table><thead><tr><th>Keyword</th><th class="num">Start</th><th class="num">Now</th><th class="num">Change</th><th class="num">Volume</th></tr></thead><tbody>';
+  rows.slice(0,tierLimit).forEach(x => {
+    const change = (x.initialPos !== null && x.currentPos !== null) ? (x.initialPos - x.currentPos) : null;
+    let changeHtml = '<span class="change-flat">—</span>';
+    if(x.initialPos === null) changeHtml = '<span class="pill pill-green">new</span>';
+    else if(change > 0) changeHtml = '<span class="change-up">▲ ' + fmtNum(change) + '</span>';
+    else if(change < 0) changeHtml = '<span class="change-down">▼ ' + fmtNum(Math.abs(change)) + '</span>';
+    else if(change === 0) changeHtml = '<span class="change-flat">no change</span>';
+    html += '<tr><td class="kw-cell">'+escapeHtml(x.keyword)+'</td>' +
+      '<td class="num">'+(x.initialPos!==null?fmtNum(x.initialPos):'—')+'</td>' +
+      '<td class="num">'+fmtNum(x.currentPos)+'</td>' +
+      '<td class="num">'+changeHtml+'</td>' +
+      '<td class="num">'+(x.volume!==null?fmtNum(x.volume):'—')+'</td></tr>';
+  });
+  html += '</tbody></table>';
+  container.innerHTML = html;
+}
+
+function getBigMovers(limit){
+  const both = state.merged.filter(x => x.initialPos !== null && x.currentPos !== null);
+  return both.map(x => ({...x, change: x.initialPos - x.currentPos}))
+    .filter(x => x.change > 0)
+    .sort((a,b) => b.change - a.change)
+    .slice(0, limit);
+}
+
+function renderMovers(){
+  const movers = getBigMovers(9);
+
+  const container = document.getElementById('movers-container');
+  if(!movers.length){ container.innerHTML = '<div class="empty-note">No overlapping keywords with movement yet.</div>'; return; }
+
+  container.innerHTML = '<div class="mover-grid">' + movers.map(x =>
+    '<div class="mover-card"><div class="kw">'+escapeHtml(x.keyword)+'</div>' +
+    '<div class="movement"><span>#'+fmtNum(x.initialPos)+'</span><span class="arrow">→</span><span>#'+fmtNum(x.currentPos)+'</span>' +
+    '<span class="delta">+'+fmtNum(x.change)+'</span></div></div>'
+  ).join('') + '</div>';
+
+  const newPage1 = state.merged.filter(x => x.currentPos !== null && x.currentPos <= 10 && (x.initialPos === null || x.initialPos > 10))
+    .sort((a,b) => a.currentPos - b.currentPos);
+  const section = document.getElementById('new-page-one');
+  if(newPage1.length){
+    section.style.display = '';
+    let html = '<table><thead><tr><th>Keyword</th><th class="num">Current position</th><th class="num">Volume</th></tr></thead><tbody>';
+    newPage1.forEach(x => {
+      html += '<tr><td class="kw-cell">'+escapeHtml(x.keyword)+'</td><td class="num">'+fmtNum(x.currentPos)+'</td><td class="num">'+(x.volume!==null?fmtNum(x.volume):'—')+'</td></tr>';
+    });
+    html += '</tbody></table>';
+    document.getElementById('newpage1-table').innerHTML = html;
+  } else {
+    section.style.display = 'none';
+  }
+}
+
+function renderOpportunities(){
+  const threshold = state.oppThreshold || 0;
+  let rows = state.merged.filter(x => x.currentPos !== null && x.currentPos >= 11 && x.currentPos <= 30);
+  rows = rows.filter(x => x.volume === null || x.volume >= threshold);
+  rows.sort((a,b) => (b.volume||0) - (a.volume||0) || a.currentPos - b.currentPos);
+  rows = rows.slice(0, 30);
+
+  const container = document.getElementById('opportunities-table');
+  if(!rows.length){ container.innerHTML = '<div class="empty-note">No page-two keywords meet this volume threshold yet — try lowering it.</div>'; return; }
+
+  let html = '<table><thead><tr><th>Keyword</th><th class="num">Position</th><th class="num">Volume</th><th>Intent</th></tr></thead><tbody>';
+  rows.forEach(x => {
+    const commercial = isCommercialIntent(x.keyword);
+    html += '<tr><td class="kw-cell">'+escapeHtml(x.keyword)+'</td>' +
+      '<td class="num">'+fmtNum(x.currentPos)+'</td>' +
+      '<td class="num">'+(x.volume!==null?fmtNum(x.volume):'—')+'</td>' +
+      '<td>'+(commercial ? '<span class="pill pill-amber">Commercial intent</span>' : '<span class="pill pill-navy">Informational</span>')+'</td></tr>';
+  });
+  html += '</tbody></table>';
+  container.innerHTML = html;
+}
+
+function renderCompetitor(){
+  const navLink = document.getElementById('nav-competitor');
+  const section = document.getElementById('competitor');
+  const commentField = document.getElementById('comment-competitor-field');
+
+  const competitorsWithRows = state.competitorMerged.filter(c => c.rows.length);
+
+  if(!competitorsWithRows.length){
+    navLink.style.display = 'none'; section.style.display = 'none'; commentField.style.display = 'none';
+    return;
+  }
+  navLink.style.display = ''; section.style.display = ''; commentField.style.display = '';
+
+  const container = document.getElementById('competitor-table');
+  let html = '';
+
+  competitorsWithRows.forEach(comp => {
+    html += '<div class="competitor-subhead">' + escapeHtml(comp.name) + '</div>';
+
+    // --- Full side-by-side position comparison: every tracked keyword, both positions ---
+    const allRows = comp.rows
+      .filter(x => x.competitorPos !== null || x.clientPos !== null)
+      .sort((a,b) => (b.volume||0) - (a.volume||0) || (a.competitorPos===null?999:a.competitorPos) - (b.competitorPos===null?999:b.competitorPos));
+
+    html += '<div class="table-subhead">Position comparison</div>';
+    if(!allRows.length){
+      html += '<div class="empty-note" style="margin-bottom:22px;">No overlapping keyword data found for '+escapeHtml(comp.name)+'.</div>';
+    } else {
+      const shown = allRows.slice(0, 50);
+      html += '<table style="margin-bottom:8px;"><thead><tr><th>Keyword</th><th class="num">'+escapeHtml(clientLabel())+' position</th><th class="num">'+escapeHtml(comp.name)+' position</th><th class="num">Volume</th></tr></thead><tbody>';
+      shown.forEach(x => {
+        const clientBetter = x.clientPos !== null && (x.competitorPos === null || x.clientPos < x.competitorPos);
+        const compBetter = x.competitorPos !== null && (x.clientPos === null || x.competitorPos < x.clientPos);
+        html += '<tr><td class="kw-cell">'+escapeHtml(x.keyword)+'</td>' +
+          '<td class="num'+(clientBetter?' change-up':'')+'">'+(x.clientPos!==null?fmtNum(x.clientPos):'Not ranking')+'</td>' +
+          '<td class="num'+(compBetter?' change-down':'')+'">'+(x.competitorPos!==null?fmtNum(x.competitorPos):'Not ranking')+'</td>' +
+          '<td class="num">'+(x.volume!==null?fmtNum(x.volume):'—')+'</td></tr>';
+      });
+      html += '</tbody></table>';
+      if(allRows.length > 50){
+        html += '<div class="table-note">Showing the top 50 of ' + fmtNum(allRows.length) + ' keywords by search volume.</div>';
+      }
+    }
+
+    // --- Gap analysis: keywords where the competitor has a meaningful lead ---
+    const gapRows = comp.rows
+      .filter(x => x.competitorPos !== null && x.competitorPos <= 30 && (x.clientPos === null || x.clientPos > x.competitorPos + 5))
+      .sort((a,b) => (b.volume||0) - (a.volume||0))
+      .slice(0, 20);
+
+    html += '<div class="table-subhead">Gap opportunities</div>';
+    if(!gapRows.length){
+      html += '<div class="empty-note" style="margin-bottom:24px;">No significant gaps found against '+escapeHtml(comp.name)+' — '+escapeHtml(clientLabel())+' is holding its ground well.</div>';
+    } else {
+      html += '<table style="margin-bottom:24px;"><thead><tr><th>Keyword</th><th class="num">'+escapeHtml(comp.name)+' position</th><th class="num">'+escapeHtml(clientLabel())+' position</th><th class="num">Volume</th></tr></thead><tbody>';
+      gapRows.forEach(x => {
+        html += '<tr><td class="kw-cell">'+escapeHtml(x.keyword)+'</td>' +
+          '<td class="num">'+fmtNum(x.competitorPos)+'</td>' +
+          '<td class="num">'+(x.clientPos!==null?fmtNum(x.clientPos):'Not ranking')+'</td>' +
+          '<td class="num">'+(x.volume!==null?fmtNum(x.volume):'—')+'</td></tr>';
+      });
+      html += '</tbody></table>';
+    }
+  });
+
+  container.innerHTML = html;
+}
+
+function renderReportHeader(){
+  document.getElementById('report-title').textContent = state.clientName || 'Client';
+  document.getElementById('report-meta').textContent = state.period ? ('Reporting period: ' + state.period) : '';
+  document.getElementById('footer-date').textContent = 'Generated ' + new Date().toLocaleDateString(undefined, {year:'numeric', month:'long', day:'numeric'});
+
+  const name = clientLabel();
+  document.getElementById('comments-desc').innerHTML = 'Add context for ' + escapeHtml(name) + ' — what\u2019s driving the wins, and what\u2019s planned next. Use <strong>Suggest text</strong> to pull a starting point straight from the data, then edit it however you like.';
+  document.getElementById('competitor-desc').textContent = 'A full position-by-position comparison against each competitor, plus the specific keywords where ' + name + ' has room to close the gap. Different competitors are shown separately, since businesses often compete with different rivals across different parts of their offering.';
+}
+
+function renderAll(){
+  renderReportHeader();
+  const stats = computeStats();
+  renderStatGrid(stats);
+  renderVisibilityPanel(stats);
+  renderCoveragePanel(stats);
+  renderTierGrid(stats);
+  renderTopKeywordsTable();
+  renderMovers();
+  renderOpportunities();
+  renderCompetitor();
+}
+
+/* ---------------------------------------------------------
+   AUTO-GENERATED COMMENT SUGGESTIONS
+   Builds a plain-language starting point from the report data,
+   which the consultant can then edit or add to freely.
+--------------------------------------------------------- */
+function buildOverviewComment(){
+  const stats = computeStats();
+  const parts = [];
+  parts.push('Keywords ranking in the top 100 grew from ' + fmtNum(stats.kwCountThen) + ' to ' + fmtNum(stats.kwCountNow) +
+    ' (' + (stats.kwCountPctChange >= 0 ? '+' : '') + fmtNum(stats.kwCountPctChange,0) + '%).');
+  parts.push('Top 10 rankings moved from ' + fmtNum(stats.top10Then) + ' to ' + fmtNum(stats.top10Now) + '.');
+  if(stats.newPage1Count > 0){
+    parts.push(fmtNum(stats.newPage1Count) + ' keyword' + (stats.newPage1Count === 1 ? '' : 's') + ' reached page one for the first time this period.');
+  }
+  parts.push('Estimated visibility is ' + (stats.pctChange >= 0 ? 'up' : 'down') + ' ' + fmtNum(Math.abs(stats.pctChange),0) +
+    '%, and estimated audience exposure is ' + (stats.exposurePctChange >= 0 ? 'up' : 'down') + ' ' + fmtNum(Math.abs(stats.exposurePctChange),0) + '%.');
+  return parts.join(' ');
+}
+
+function buildMoversComment(){
+  const movers = getBigMovers(5);
+  if(!movers.length) return 'No overlapping keywords showed movement yet this period — worth checking back once more data comes through.';
+  const bits = movers.map(x => '"' + x.keyword + '" (#' + fmtNum(x.initialPos) + ' \u2192 #' + fmtNum(x.currentPos) + ', +' + fmtNum(x.change) + ')');
+  return 'Standout movers this period: ' + bits.join('; ') + '.';
+}
+
+function buildOpportunitiesComment(){
+  const threshold = state.oppThreshold || 0;
+  let rows = state.merged.filter(x => x.currentPos !== null && x.currentPos >= 11 && x.currentPos <= 30);
+  rows = rows.filter(x => x.volume === null || x.volume >= threshold);
+  rows.sort((a,b) => (b.volume||0) - (a.volume||0) || a.currentPos - b.currentPos);
+  const top = rows.slice(0,5);
+  if(!top.length) return 'No page-two opportunities meet the current volume threshold yet — try lowering it in the Opportunities section.';
+  const bits = top.map(x => '"' + x.keyword + '" (position ' + fmtNum(x.currentPos) +
+    (x.volume !== null ? ', ' + fmtNum(x.volume) + ' searches/mo' : '') +
+    (isCommercialIntent(x.keyword) ? ', commercial intent' : '') + ')');
+  return 'Priority opportunities for next period: ' + bits.join('; ') + '.';
+}
+
+function buildCompetitorComment(){
+  const withGaps = state.competitorMerged.map(c => {
+    const rows = c.rows
+      .filter(x => x.competitorPos !== null && x.competitorPos <= 30 && (x.clientPos === null || x.clientPos > x.competitorPos + 5))
+      .sort((a,b) => (b.volume||0) - (a.volume||0));
+    return { name: c.name, rows };
+  }).filter(c => c.rows.length);
+
+  if(!withGaps.length) return 'No significant competitor gaps identified this period — ' + clientLabel() + ' is holding its ground well.';
+
+  return withGaps.map(c =>
+    c.name + ': ' + fmtNum(c.rows.length) + ' keyword' + (c.rows.length === 1 ? '' : 's') + ' where there is room to close the gap' +
+    (c.rows[0] ? ' (e.g. "' + c.rows[0].keyword + '")' : '') + '.'
+  ).join(' ');
+}
+
+function generateComment(field){
+  if(field === 'overview') return buildOverviewComment();
+  if(field === 'movers') return buildMoversComment();
+  if(field === 'opportunities') return buildOpportunitiesComment();
+  if(field === 'competitor') return buildCompetitorComment();
+  return '';
+}
+
+/* ---------------------------------------------------------
+   COMMENTS / STORAGE
+   Uses Claude's window.storage when this tool is running inside
+   a Claude chat/artifact. When opened as a downloaded file in a
+   normal browser (the typical way this tool gets used day to day),
+   window.storage doesn't exist, so this falls back to the browser's
+   own localStorage, which persists comments on this device.
+--------------------------------------------------------- */
+function reportKey(){
+  return 'mms-report:' + slug(state.clientName) + ':' + slug(state.period);
+}
+
+async function storageGet(key){
+  if(typeof window.storage !== 'undefined' && window.storage){
+    try{
+      const result = await window.storage.get(key, false);
+      return result ? result.value : null;
+    }catch(err){
+      // fall through to localStorage
+    }
+  }
+  try{
+    return localStorage.getItem(key);
+  }catch(err){
+    return null;
+  }
+}
+
+async function storageSet(key, value){
+  if(typeof window.storage !== 'undefined' && window.storage){
+    try{
+      const result = await window.storage.set(key, value, false);
+      if(result) return true;
+    }catch(err){
+      // fall through to localStorage
+    }
+  }
+  try{
+    localStorage.setItem(key, value);
+    return true;
+  }catch(err){
+    return false;
+  }
+}
+
+async function loadComments(){
+  const fields = ['overview','movers','opportunities','competitor'];
+  try{
+    const value = await storageGet(reportKey());
+    if(value){
+      const data = JSON.parse(value);
+      fields.forEach(f => {
+        const el = document.getElementById('comment-' + f);
+        if(el && data[f]) el.value = data[f];
+      });
+    }
+  }catch(err){
+    // no saved comments yet for this client/period — that's fine
+  }
+}
+
+async function saveComments(){
+  const fields = ['overview','movers','opportunities','competitor'];
+  const data = {};
+  fields.forEach(f => {
+    const el = document.getElementById('comment-' + f);
+    if(el) data[f] = el.value;
+  });
+  const statusEl = document.getElementById('save-status');
+  try{
+    const ok = await storageSet(reportKey(), JSON.stringify(data));
+    if(ok){
+      statusEl.textContent = 'Saved';
+      statusEl.style.color = 'var(--green)';
+      statusEl.classList.add('show');
+      setTimeout(() => statusEl.classList.remove('show'), 2200);
+    } else {
+      statusEl.textContent = 'Could not save on this device — copy your comments somewhere safe before closing.';
+      statusEl.style.color = '#B5482A';
+      statusEl.classList.add('show');
+    }
+  }catch(err){
+    statusEl.textContent = 'Could not save on this device — copy your comments somewhere safe before closing.';
+    statusEl.style.color = '#B5482A';
+    statusEl.classList.add('show');
+  }
+}
+
+/* ---------------------------------------------------------
+   EVENTS / INIT
+--------------------------------------------------------- */
+handleFileInput('initial', document.getElementById('file-initial'));
+handleFileInput('current', document.getElementById('file-current'));
+initCompetitorUploadEvents();
+addCompetitor();
+
+document.getElementById('generate-btn').addEventListener('click', function(){
+  state.clientName = document.getElementById('clientName').value.trim() || 'Client';
+  state.period = document.getElementById('reportPeriod').value.trim();
+  buildMergedDataset();
+  document.getElementById('setup-screen').style.display = 'none';
+  document.getElementById('report-screen').style.display = '';
+  renderAll();
+  loadComments();
+  window.scrollTo(0,0);
+});
+
+document.getElementById('reset-btn').addEventListener('click', function(){
+  if(!confirm('Start a new report? Any unsaved comments on this report will be lost, and the form will be cleared.')) return;
+  resetToSetup();
+});
+
+function resetToSetup(){
+  // Wipe all in-memory data so nothing from the previous client carries over
+  state.clientName = '';
+  state.period = '';
+  state.files = { initial: null, current: null };
+  state.raw = { initial: null, current: null };
+  state.mapping = { initial: {}, current: {} };
+  state.merged = [];
+  state.competitors = [];
+  state.competitorMerged = [];
+  state.oppThreshold = 0;
+  state.competitorCounter = 0;
+
+  // Clear the setup form fields
+  document.getElementById('clientName').value = '';
+  document.getElementById('reportPeriod').value = '';
+
+  ['initial','current'].forEach(key => {
+    const fileInput = document.getElementById('file-' + key);
+    if(fileInput) fileInput.value = '';
+    const statusEl = document.getElementById('status-' + key);
+    if(statusEl){ statusEl.textContent = ''; statusEl.classList.remove('show'); }
+    const mappingEl = document.getElementById('mapping-' + key);
+    if(mappingEl){ mappingEl.innerHTML = ''; mappingEl.classList.remove('show'); }
+  });
+
+  // Rebuild competitor uploads back to a single empty block
+  addCompetitor();
+
+  document.getElementById('generate-btn').disabled = true;
+
+  // Clear every comment field and reset the save indicator
+  ['overview','movers','opportunities','competitor'].forEach(field => {
+    const ta = document.getElementById('comment-' + field);
+    if(ta) ta.value = '';
+  });
+  const saveStatus = document.getElementById('save-status');
+  if(saveStatus) saveStatus.classList.remove('show');
+
+  // Reset report-view controls so they don't carry over visually next time
+  const topSearch = document.getElementById('top-search');
+  if(topSearch) topSearch.value = '';
+  const topSort = document.getElementById('top-sort');
+  if(topSort) topSort.value = 'pos';
+  const topTierFilter = document.getElementById('top-tier-filter');
+  if(topTierFilter) topTierFilter.value = '100';
+  const oppThreshold = document.getElementById('opp-threshold');
+  if(oppThreshold) oppThreshold.value = 0;
+
+  document.getElementById('report-screen').style.display = 'none';
+  document.getElementById('setup-screen').style.display = '';
+  window.scrollTo(0,0);
+}
+
+document.getElementById('print-btn').addEventListener('click', function(){ window.print(); });
+
+document.getElementById('top-search').addEventListener('input', renderTopKeywordsTable);
+document.getElementById('top-sort').addEventListener('change', renderTopKeywordsTable);
+document.getElementById('top-tier-filter').addEventListener('change', renderTopKeywordsTable);
+
+document.getElementById('opp-apply').addEventListener('click', function(){
+  state.oppThreshold = parseFloat(document.getElementById('opp-threshold').value) || 0;
+  renderOpportunities();
+});
+
+document.getElementById('save-comments-btn').addEventListener('click', saveComments);
+
+document.querySelectorAll('.suggest-btn').forEach(btn => {
+  btn.addEventListener('click', function(){
+    const field = this.dataset.target;
+    const textarea = document.getElementById('comment-' + field);
+    if(!textarea) return;
+    const suggestion = generateComment(field);
+    if(textarea.value.trim()){
+      textarea.value = textarea.value.trim() + '\n\n' + suggestion;
+    } else {
+      textarea.value = suggestion;
+    }
+  });
+});
+
+document.getElementById('autofill-all-btn').addEventListener('click', function(){
+  ['overview','movers','opportunities','competitor'].forEach(field => {
+    const textarea = document.getElementById('comment-' + field);
+    if(textarea && !textarea.value.trim()){
+      textarea.value = generateComment(field);
+    }
+  });
+});
+
+})();
+</script>
+</body>
+</html>
