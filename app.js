@@ -40,7 +40,7 @@ function renderSidebar() {
   allBtn.className = "biz-item" + (activeFilter === "all" ? " active" : "");
   allBtn.style.setProperty("--dot", "#8f97a3");
   allBtn.innerHTML = `<span class="dot"></span> All tasks <span class="count">${tasks.filter(t=>t.status!=='done').length}</span>`;
-  allBtn.onclick = () => { activeFilter = "all"; renderAll(); };
+  allBtn.onclick = () => { activeFilter = "all"; nav.classList.remove("mobile-show"); renderAll(); };
   nav.appendChild(allBtn);
 
   categories.forEach(b => {
@@ -52,7 +52,7 @@ function renderSidebar() {
     btn.className = "biz-item" + (activeFilter === b.id ? " active" : "");
     btn.style.setProperty("--dot", b.color);
     btn.innerHTML = `<span class="dot"></span> ${b.name} <span class="count">${count}</span>`;
-    btn.onclick = () => { activeFilter = b.id; renderAll(); };
+    btn.onclick = () => { activeFilter = b.id; nav.classList.remove("mobile-show"); renderAll(); };
     const del = document.createElement("button");
     del.type = "button";
     del.className = "biz-del";
@@ -108,6 +108,10 @@ function renderSwatchPicker() {
     wrap.appendChild(dot);
   });
 }
+
+document.getElementById("settingsToggleBtn").onclick = () => {
+  document.getElementById("settingsPanel").classList.toggle("hidden");
+};
 
 document.getElementById("showAddCategoryBtn").onclick = () => {
   document.getElementById("addCategoryForm").classList.toggle("show");
@@ -245,6 +249,16 @@ document.querySelectorAll("[data-priority]").forEach(btn => {
     document.getElementById("reminderField").classList.toggle("hidden", !isAppt);
     document.getElementById("callFields").classList.toggle("hidden", !isCall);
     document.getElementById("skipDateBtn").classList.toggle("hidden", isAppt);
+
+    // For calls, put Name/Phone first — before the date/time fields
+    const dtRow = document.getElementById("dateTimeRow");
+    const callFieldsEl = document.getElementById("callFields");
+    if (isCall) {
+      dtRow.parentNode.insertBefore(callFieldsEl, dtRow);
+    } else {
+      dtRow.parentNode.insertBefore(dtRow, callFieldsEl);
+    }
+
     showStep("stepDate");
   };
 });

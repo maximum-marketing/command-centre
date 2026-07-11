@@ -19,38 +19,46 @@
     <div class="logo-mark"><div></div><div></div><div></div><div></div></div>
     <div class="logo-text">COMMAND CENTRE<span>Task &amp; workflow control</span></div>
   </div>
-  <div class="mobile-cat-row" id="mobileCatRow">
-    <select id="categoryFilterSelect"></select>
-    <button type="button" id="toggleCatManageBtn" title="Manage categories">⚙</button>
+
+  <button id="settingsToggleBtn" class="ghost-btn" style="margin:12px 20px 0;">⚙ Settings</button>
+  <div class="hidden" id="settingsPanel" style="margin:8px 20px 4px; display:flex; flex-direction:column; gap:8px;">
+    <div class="sidebar-foot" id="syncStatus" style="border:none; padding:0; margin:0;"><span class="sync-dot"></span> Saved on this device · offline-ready</div>
+
+    <button id="showAddCategoryBtn" class="ghost-btn" style="width:100%;">+ Add category</button>
+    <div class="add-category" id="addCategoryForm">
+      <input type="text" id="newCategoryName" placeholder="e.g. Personal, University, Sport">
+      <div class="chip-row" id="colorSwatches"></div>
+      <button type="button" id="saveCategoryBtn" class="add-btn" style="width:100%">Add category</button>
+    </div>
+
+    <button id="showSyncBtn" class="ghost-btn" style="width:100%;">⇅ Sync settings</button>
+    <div class="add-category" id="syncForm">
+      <div style="font-size:11.5px; color:var(--ink-dim); line-height:1.5;">
+        Paste your Supabase project URL and anon key to sync tasks between your phone and desktop.
+      </div>
+      <input type="text" id="supabaseUrl" placeholder="Supabase Project URL">
+      <input type="text" id="supabaseKey" placeholder="Supabase anon public key">
+      <input type="text" id="syncWorkspace" placeholder="Workspace name, e.g. your name">
+      <div style="font-size:10.5px; color:var(--ink-faint); line-height:1.4;">
+        If sharing one Supabase project with someone else, give each person a different
+        workspace name so your data stays separate. Leave blank if it's just you.
+      </div>
+      <button type="button" id="saveSyncBtn" class="add-btn" style="width:100%">Connect</button>
+      <button type="button" id="disconnectSyncBtn" class="ghost-btn" style="width:100%">Disconnect sync</button>
+    </div>
+
+    <button id="installBtn" style="width:100%;">Install app</button>
+    <button id="checkUpdateBtn" class="ghost-btn" style="width:100%;">🔄 Check for updates</button>
   </div>
+
   <nav id="bizNav">
     <div class="nav-label">Categories</div>
     <!-- populated by app.js -->
   </nav>
-  <button id="showAddCategoryBtn" class="ghost-btn" style="margin:12px 20px 0;">+ Add category</button>
-  <div class="add-category" id="addCategoryForm">
-    <input type="text" id="newCategoryName" placeholder="e.g. Personal, University, Sport">
-    <div class="chip-row" id="colorSwatches"></div>
-    <button type="button" id="saveCategoryBtn" class="add-btn" style="width:100%">Add category</button>
+  <div class="mobile-cat-row" id="mobileCatRow">
+    <select id="categoryFilterSelect"></select>
+    <button type="button" id="toggleCatManageBtn" title="Manage categories">⚙</button>
   </div>
-  <div class="sidebar-foot" id="syncStatus"><span class="sync-dot"></span> Saved on this device · offline-ready</div>
-  <button id="showSyncBtn" class="ghost-btn" style="margin:8px 20px 0;">⇅ Sync settings</button>
-  <div class="add-category" id="syncForm">
-    <div style="font-size:11.5px; color:var(--ink-dim); line-height:1.5;">
-      Paste your Supabase project URL and anon key to sync tasks between your phone and desktop.
-    </div>
-    <input type="text" id="supabaseUrl" placeholder="Supabase Project URL">
-    <input type="text" id="supabaseKey" placeholder="Supabase anon public key">
-    <input type="text" id="syncWorkspace" placeholder="Workspace name, e.g. your name">
-    <div style="font-size:10.5px; color:var(--ink-faint); line-height:1.4;">
-      If sharing one Supabase project with someone else, give each person a different
-      workspace name so your data stays separate. Leave blank if it's just you.
-    </div>
-    <button type="button" id="saveSyncBtn" class="add-btn" style="width:100%">Connect</button>
-    <button type="button" id="disconnectSyncBtn" class="ghost-btn" style="width:100%">Disconnect sync</button>
-  </div>
-  <button id="installBtn">Install app</button>
-  <button id="checkUpdateBtn" class="ghost-btn" style="margin:8px 20px 16px;">🔄 Check for updates</button>
 </aside>
 
 <main>
@@ -85,7 +93,7 @@
       </div>
       <div class="step hidden" id="stepDate">
         <div class="step-label" id="dateStepLabel">Due date &amp; time (optional)</div>
-        <div class="date-row">
+        <div class="date-row" id="dateTimeRow">
           <div class="field">
             <label for="dueDateInput">Date</label>
             <input type="date" id="dueDateInput">
